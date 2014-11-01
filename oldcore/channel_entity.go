@@ -1,23 +1,6 @@
 package core
 
-import (
-	"strconv"
-	"time"
-)
-
-type ChannelEntity struct {
-	Title       string      `json:"title"`
-	Description string      `json:"description"`
-	ImageUrl    string      `json:"image_url"`
-	Url         string      `json:"url"`
-	Id          int64       `json:"raw_id"`
-	Uri         string      `json:"id"`
-	ToView      int64       `json:"to_view"`
-	Subscribed  interface{} `json:"subscribed"`
-	Copyright   string      `json:"copyright"`
-	Episodes    []int64     `json:"episodes"`
-	UpdatedAt   time.Time   `json:"updated_at"`
-}
+import "strconv"
 
 func (ce *ChannelEntity) FixUri() string {
 	ch := Channel{Title: ce.Title, Id: ce.Id}

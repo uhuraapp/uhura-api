@@ -295,7 +295,6 @@ func main() {
 	apiRouter := r.PathPrefix("/api").Subrouter()
 	apiRouter.StrictSlash(true)
 
-	apiRouter.HandleFunc("/subscriptions", loginBuilder.Protected(core.GetSubscriptions))
 	// apiRouter.HandleFunc("/channels", loginBuilder.Protected(core.GetChannels))
 	apiRouter.HandleFunc("/channels/{uri}", loginBuilder.Protected(core.GetChannel))
 	apiRouter.HandleFunc("/channels/{uri}/reload", loginBuilder.Protected(core.ReloadChannel))
@@ -306,7 +305,6 @@ func main() {
 	apiRouter.HandleFunc("/episodes/{id}", loginBuilder.Protected(core.GetEpisode))
 	apiRouter.HandleFunc("/episodes/{id}/listened", loginBuilder.Protected(core.SetEpisodeListened))
 	apiRouter.HandleFunc("/episodes/{id}/download", loginBuilder.Protected(core.EpisodeDownload))
-	apiRouter.HandleFunc("/suggestions", loginBuilder.Protected(core.SugestionsEpisodes))
 	apiRouter.HandleFunc("/categories", loginBuilder.Protected(core.GetCategories))
 	apiRouter.HandleFunc("/categories/{id}/channels", loginBuilder.Protected(core.GetCategoryChannels))
 

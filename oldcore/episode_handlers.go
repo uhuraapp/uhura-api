@@ -8,28 +8,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func SugestionsEpisodes(userId string, w http.ResponseWriter, request *http.Request) {
-	var (
-		channelsIds []int
-	)
-
-	channels := make([]ChannelEntity, 0)
-	episodes := make([]EpisodeEntity, 0)
-
-	subscriptionsCached, err := CacheGet("s:ids:"+userId, channelsIds)
-
-	if err == nil {
-		channelsIds, _ = subscriptionsCached.([]int)
-
-		if len(channelsIds) > 0 {
-			database.Table("channels").Where("channels.id in (?)", channelsIds).Find(&channels)
-			database.Raw("SELECT * FROM (SELECT items.*,row_number() OVER (PARTITION BY items.channel_id ORDER BY items.title) AS number_rows FROM items LEFT JOIN user_items ON user_items.item_id = items.id AND user_items.user_id = ? AND user_items.viewed = FALSE WHERE items.channel_id IN (?)) AS itemS WHERE number_rows <= 5 ORDER BY title", userId, channelsIds).Scan(&episodes)
-		}
-	}
-
-	r.ResponseJSON(w, 200, map[string]interface{}{"episodes": episodes, "channels": channels})
-}
-
 func GetEpisodes(userId string, w http.ResponseWriter, request *http.Request) {
 	var userItems []int64
 
