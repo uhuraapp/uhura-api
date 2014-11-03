@@ -1,18 +1,28 @@
 package cache
 
 import (
+	"errors"
 	"io"
 	"log"
 	"os"
 	"reflect"
+	"sync"
 
+	"github.com/dustin/gomemcached"
 	memcache "github.com/dustin/gomemcached/client"
 	"github.com/ugorji/go/codec"
 )
 
 var (
-	CACHE *memcache.Client
+	CACHE CacheInterface
 )
+
+type CacheInterface interface {
+	Set(uint16, string, int, int, []byte) (*gomemcached.MCResponse, error)
+	Get(uint16, string) (*gomemcached.MCResponse, error)
+	Auth(string, string) (*gomemcached.MCResponse, error)
+	IsHealthy() bool
+}
 
 func Set(key string, data interface{}) {
 	var (
@@ -73,8 +83,8 @@ func init() {
 	CACHE, memcachedErr = memcache.Connect("tcp", memcachedUrl)
 
 	if memcachedErr != nil {
-		log.Println("Config:", memcachedUrl, memcachedPassword, memcachedUsername)
-		log.Panic("Memcached error", memcachedErr.Error())
+		log.Println("in APP CACHE")
+		CACHE = inAppCache{}
 	}
 
 	if memcachedPassword != "" {
@@ -84,4 +94,38 @@ func init() {
 	log.Println("CACHE Healthy", CACHE.IsHealthy())
 	log.Println(CACHE.Set(0, "test", 0, 5, []byte("Testing...")))
 	log.Println(CACHE.Get(0, "test"))
+}
+
+var DATA = make(map[string][]byte, 0)
+
+type inAppCache struct {
+	sync.Mutex
+}
+
+func (c inAppCache) Set(_ uint16, key string, _ int, _ int, value []byte) (*gomemcached.MCResponse, error) {
+	c.Lock()
+	if DATA == nil {
+		DATA = make(map[string][]byte, 0)
+	}
+	DATA[key] = value
+	defer c.Unlock()
+
+	return &gomemcached.MCResponse{Body: value}, nil
+}
+
+func (c inAppCache) Get(_ uint16, key string) (*gomemcached.MCResponse, error) {
+	d := DATA[key]
+	if d == nil {
+		return nil, errors.New("Not found")
+	}
+
+	return &gomemcached.MCResponse{Body: d}, nil
+}
+
+func (c inAppCache) Auth(string, string) (*gomemcached.MCResponse, error) {
+	return nil, nil
+}
+
+func (c inAppCache) IsHealthy() bool {
+	return true
 }
