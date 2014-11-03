@@ -24,3 +24,7 @@ type Channel struct {
 	Colors        string
 	helpers.Uriable
 }
+
+func (c Channel) TableName() string {
+	return "channels"
+}

@@ -26,5 +26,8 @@ func New() gorm.DB {
 }
 
 func Migrations(database gorm.DB) {
+	database.AutoMigrate(models.Episode{})
+	database.AutoMigrate(models.Listened{})
 	database.AutoMigrate(models.Channel{})
+	database.AutoMigrate(models.Subscription{})
 }

@@ -1,15 +1,20 @@
-package main
+package services_test
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
 	d "github.com/uhuraapp/uhura-api/database"
+	"github.com/uhuraapp/uhura-api/models"
+	. "gopkg.in/check.v1"
 )
+
+func Test(t *testing.T) { TestingT(t) }
 
 func PerformRequest(r http.Handler, method, path string) *httptest.ResponseRecorder {
 	req, _ := http.NewRequest(method, path, nil)
@@ -41,4 +46,12 @@ func databaseTest() gorm.DB {
 	d.Migrations(database)
 
 	return database
+}
+
+func resetDatabase() {
+	db := databaseTest()
+	db.Delete(models.Episode{})
+	db.Delete(models.Listened{})
+	db.Delete(models.Subscription{})
+	db.Delete(models.Channel{})
 }
