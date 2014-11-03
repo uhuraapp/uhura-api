@@ -1,4 +1,5 @@
 export MEMCACHEDCLOUD_SERVERS="localhost:11211"
 export DATABASE_URL="postgres://localhost:5432/duke?sslmode=disable"
+export TEST_DATABASE_URL="postgres://localhost:5432/test?sslmode=disable"
 export PORT=5000
 export DEBUG=true
