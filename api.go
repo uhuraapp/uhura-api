@@ -6,9 +6,9 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/uhuraapp/uhura-api/database"
 	"github.com/uhuraapp/uhura-api/middleware"
-	"github.com/uhuraapp/uhura-api/subscriptions"
-	"github.com/uhuraapp/uhura-api/suggestions"
+	"github.com/uhuraapp/uhura-api/services"
 )
 
 func main() {
@@ -23,6 +23,11 @@ func main() {
 }
 
 func Mount(_r *gin.RouterGroup) {
+	DB := database.New()
+
+	subscriptions := services.NewSubscriptionService(DB)
+	suggestions := services.NewSuggestionsService(DB)
+
 	r := _r.Group("/v2", middleware.Authentication())
 	{
 		r.GET("/subscriptions", subscriptions.Get)

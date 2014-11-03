@@ -6,6 +6,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 	pq "github.com/lib/pq"
+	"github.com/uhuraapp/uhura-api/models"
 )
 
 func New() gorm.DB {
@@ -22,4 +23,8 @@ func New() gorm.DB {
 	database.LogMode(os.Getenv("DEBUG") == "true")
 
 	return database
+}
+
+func Migrations(database gorm.DB) {
+	database.AutoMigrate(models.Channel{})
 }
