@@ -121,3 +121,13 @@ func (x SubscriptionsSuite) TestGetToViewCached(c *C) {
 
 	c.Assert(toView, Equals, int64(1))
 }
+
+func (x SubscriptionsSuite) TestGetIsOkBot(c *C) {
+	s := services.NewSubscriptionService(x.DB)
+	r := botRequest("GET", s.Get)
+
+	data, _ := simplejson.NewJson(r.Body.Bytes())
+	subscriptions, _ := data.GetPath("subscriptions").Array()
+
+	c.Assert(len(subscriptions), Equals, 0)
+}

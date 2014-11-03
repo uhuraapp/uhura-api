@@ -5,6 +5,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/uhuraapp/uhura-api/cache"
 	"github.com/uhuraapp/uhura-api/entities"
+	"github.com/uhuraapp/uhura-api/helpers"
 	"github.com/uhuraapp/uhura-api/models"
 )
 
@@ -23,34 +24,34 @@ func (s SubscriptionService) Get(c *gin.Context) {
 	_userId, _ := c.Get("user_id")
 	userId := _userId.(string)
 
-	//if !utils.IsABotUser(userId) {
-	subscriptionsCached, err := cache.Get("s:ids:"+userId, ids)
+	if !helpers.IsABotUser(userId) {
+		subscriptionsCached, err := cache.Get("s:ids:"+userId, ids)
 
-	if err == nil {
-		var ok bool
-		ids, ok = subscriptionsCached.([]int)
-		if !ok {
+		if err == nil {
+			var ok bool
+			ids, ok = subscriptionsCached.([]int)
+			if !ok {
+				s.DB.Table(models.Subscription{}.TableName()).Where("user_id = ?", userId).
+					Pluck("channel_id", &ids)
+				go cache.Set("s:ids:"+userId, ids)
+			}
+		} else {
 			s.DB.Table(models.Subscription{}.TableName()).Where("user_id = ?", userId).
 				Pluck("channel_id", &ids)
 			go cache.Set("s:ids:"+userId, ids)
 		}
-	} else {
-		s.DB.Table(models.Subscription{}.TableName()).Where("user_id = ?", userId).
-			Pluck("channel_id", &ids)
-		go cache.Set("s:ids:"+userId, ids)
-	}
 
-	if len(ids) > 0 {
-		s.DB.Table(models.Channel{}.TableName()).Where("id in (?)", ids).Find(&subscriptions)
-	}
+		if len(ids) > 0 {
+			s.DB.Table(models.Channel{}.TableName()).Where("id in (?)", ids).Find(&subscriptions)
+		}
 
-	for i, _ := range subscriptions {
-		//subscriptions[i].Uri = channel.FixUri()
-		//go subscriptions[i].SetSubscribed(userId)
-		//subscriptions[i].SetEpisodesIds()
-		subscriptions[i].ToView = subscriptions[i].GetToView(s.DB, userId)
+		for i, _ := range subscriptions {
+			//subscriptions[i].Uri = channel.FixUri()
+			//go subscriptions[i].SetSubscribed(userId)
+			//subscriptions[i].SetEpisodesIds()
+			subscriptions[i].ToView = subscriptions[i].GetToView(s.DB, userId)
+		}
 	}
-	//}
 
 	c.JSON(200, gin.H{"subscriptions": subscriptions})
 }

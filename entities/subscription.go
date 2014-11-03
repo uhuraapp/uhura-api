@@ -1,10 +1,7 @@
 package entities
 
 import (
-	"strconv"
-
 	"github.com/jinzhu/gorm"
-	"github.com/uhuraapp/uhura-api/cache"
 	"github.com/uhuraapp/uhura-api/models"
 )
 
@@ -25,21 +22,5 @@ func (s *Subscription) GetToView(database gorm.DB, userId string) int64 {
 		Where("channel_id = ? AND user_id = ?", s.Id, userId).
 		Count(&listenedCount)
 
-	return getEpisodesCount(database, s.Id) - listenedCount
-}
-
-func getEpisodesCount(database gorm.DB, channelId int64) int64 {
-	var (
-		key           = "c:e:" + strconv.Itoa(int(channelId))
-		episodesCount int64
-	)
-
-	cachedEpisodes, err := cache.Get(key, episodesCount)
-	if err == nil {
-		episodesCount = cachedEpisodes.(int64)
-	} else {
-		database.Table(models.Episode{}.TableName()).Where("channel_id = ?", channelId).Count(&episodesCount)
-		defer cache.Set(key, episodesCount)
-	}
-	return episodesCount
+	return models.Episode{}.CountByChannel(database, s.Id) - listenedCount
 }

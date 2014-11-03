@@ -23,15 +23,22 @@ func PerformRequest(r http.Handler, method, path string) *httptest.ResponseRecor
 	return w
 }
 
-func fakeAuth() gin.HandlerFunc {
+func fakeAuth(userId string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Set("user_id", "1")
+		c.Set("user_id", userId)
 	}
 }
 
 func request(method string, fn gin.HandlerFunc) *httptest.ResponseRecorder {
 	r := gin.New()
-	r.Use(fakeAuth())
+	r.Use(fakeAuth("1"))
+	r.Handle(method, "/test", []gin.HandlerFunc{fn})
+	return PerformRequest(r, method, "/test")
+}
+
+func botRequest(method string, fn gin.HandlerFunc) *httptest.ResponseRecorder {
+	r := gin.New()
+	r.Use(fakeAuth("bot"))
 	r.Handle(method, "/test", []gin.HandlerFunc{fn})
 	return PerformRequest(r, method, "/test")
 }
