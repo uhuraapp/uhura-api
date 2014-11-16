@@ -4,9 +4,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/dukex/uhura/core/helper"
 	"github.com/jinzhu/gorm"
 	"github.com/uhuraapp/uhura-api/cache"
+	"github.com/uhuraapp/uhura-api/helpers"
 )
 
 type Episode struct {
@@ -20,7 +20,7 @@ type Episode struct {
 	Duration    string
 	Uri         string
 	Type        string
-	helper.Uriable
+	helpers.Uriable
 }
 
 func (e Episode) TableName() string {
