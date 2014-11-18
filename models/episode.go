@@ -35,7 +35,11 @@ func (e Episode) CountByChannel(database gorm.DB, channelId int64) int64 {
 
 	cachedEpisodes, err := cache.Get(key, episodesCount)
 	if err == nil {
-		episodesCount = cachedEpisodes.(int64)
+		var ok bool
+		episodesCount, ok = cachedEpisodes.(int64)
+		if !ok {
+			episodesCount = int64(episodesCount)
+		}
 	} else {
 		database.Table(e.TableName()).Where("channel_id = ?", channelId).Count(&episodesCount)
 		defer cache.Set(key, episodesCount)
