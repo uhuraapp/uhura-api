@@ -20,9 +20,9 @@ func NewChannelsService(db gorm.DB) ChannelsService {
 func (s ChannelsService) Get(c *gin.Context) {
 	var channel entities.Channel
 
-	channelID, _ := c.Get("uri")
+	channelURI := c.Params.ByName("uri")
 
-	s.DB.Table(models.Channel{}.TableName()).First(&channel, channelID)
+	s.DB.Table(models.Channel{}.TableName()).Where("uri = ?", channelURI).First(&channel)
 
 	c.JSON(200, gin.H{"channel": channel})
 }
