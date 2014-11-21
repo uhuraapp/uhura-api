@@ -32,6 +32,7 @@ func (s ChannelsService) Get(c *gin.Context) {
 func (s ChannelsService) getEpisodesIDs(channelID int64) (ids []int64, episodes []entities.Episode) {
 	s.DB.Table(models.Episode{}.TableName()).
 		Where("channel_id = ?", channelID).
+		Order("published_at DESC").
 		Find(&episodes).
 		Pluck("id", &ids)
 
