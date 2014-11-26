@@ -1,1 +1,1 @@
-web: uhura
+web: uhura-api
