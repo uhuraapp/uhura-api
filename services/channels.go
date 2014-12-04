@@ -19,22 +19,26 @@ func NewChannelsService(db gorm.DB) ChannelsService {
 
 func (s ChannelsService) Get(c *gin.Context) {
 	var channel entities.Channel
-	var episodes []entities.Episode
+	var episodes []*entities.Episode
 
 	channelURI := c.Params.ByName("uri")
 
 	s.DB.Table(models.Channel{}.TableName()).Where("uri = ?", channelURI).First(&channel)
-	channel.Episodes, episodes = s.getEpisodesIDs(channel.Id)
+	channel.Episodes, episodes = s.getEpisodesIDs(channel.Id, channelURI)
 
 	c.JSON(200, gin.H{"channel": channel, "episodes": episodes})
 }
 
-func (s ChannelsService) getEpisodesIDs(channelID int64) (ids []int64, episodes []entities.Episode) {
+func (s ChannelsService) getEpisodesIDs(channelID int64, channelUri string) (ids []int64, episodes []*entities.Episode) {
 	s.DB.Table(models.Episode{}.TableName()).
 		Where("channel_id = ?", channelID).
 		Order("published_at DESC").
 		Find(&episodes).
 		Pluck("id", &ids)
+
+	for _, episode := range episodes {
+		episode.ChannelUri = channelUri
+	}
 
 	return
 }
