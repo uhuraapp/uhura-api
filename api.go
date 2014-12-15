@@ -29,13 +29,18 @@ func Mount(_r *gin.RouterGroup) {
 	suggestions := services.NewSuggestionsService(DB)
 	channels := services.NewChannelsService(DB)
 	episodes := services.NewEpisodesService(DB)
+	auth := services.NewAuthService(DB)
 
-	r := _r.Group("/v2", middleware.Authentication())
+	r := _r.Group("/v2")
 	{
-		r.GET("/subscriptions", subscriptions.Get)
-		r.GET("/suggestions", suggestions.Get)
 		r.GET("/channels/:uri", channels.Get)
-		r.GET("/episodes/:id/listened", episodes.Listened)
-		r.GET("/episodes/:id/download", episodes.Download)
+
+		// AUTH
+		r.GET("/auth/:provider", auth.ByProvider)
+
+		r.GET("/subscriptions", middleware.Authentication(), subscriptions.Get)
+		r.GET("/suggestions", middleware.Authentication(), suggestions.Get)
+		r.GET("/episodes/:id/listened", middleware.Authentication(), episodes.Listened)
+		r.GET("/episodes/:id/download", middleware.Authentication(), episodes.Download)
 	}
 }
