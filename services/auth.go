@@ -26,13 +26,20 @@ func NewAuthService(db gorm.DB) AuthService {
 }
 
 func (s AuthService) ByProvider(c *gin.Context) {
+	s.login.SetReturnTo(c.Writer, c.Request, c.Request.Header.Get("Origin"))
 	authorizer := s.login.OAuthAuthorize(c.Params.ByName("provider"))
 	authorizer(c.Writer, c.Request)
 }
 
 func (s AuthService) ByProviderCallback(c *gin.Context) {
 	userID, err := s.login.OAuthCallback(c.Params.ByName("provider"), c.Request)
-	log.Println(userID, err)
+	if err == nil {
+		session := s.login.Login(c.Request, strconv.FormatInt(userID, 10))
+		session.Save(c.Request, c.Writer)
+	}
+
+	closeHTML := []byte("<html><head></head><body>Loading....<script>window.close()</script></body></html>")
+	c.Data(200, "text/html", closeHTML)
 }
 
 func getProviders(login *login2.Builder) {
