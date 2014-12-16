@@ -33,6 +33,7 @@ func Mount(_r *gin.RouterGroup) {
 
 	r := _r.Group("/v2")
 	{
+		r.OPTIONS("*action", func(c *gin.Context) { c.Data(200, "", []byte{}) })
 		r.GET("/channels/:uri", channels.Get)
 
 		r.GET("/auth/:provider", auth.ByProvider)
