@@ -39,6 +39,8 @@ func Mount(_r *gin.RouterGroup) {
 		r.GET("/auth/:provider", auth.ByProvider)
 		r.GET("/auth/:provider/callback", auth.ByProviderCallback)
 
+		r.GET("/user", middleware.Authentication(), auth.GetUser)
+
 		r.GET("/subscriptions", middleware.Authentication(), subscriptions.Get)
 		r.GET("/suggestions", middleware.Authentication(), suggestions.Get)
 		r.GET("/episodes/:id/listened", middleware.Authentication(), episodes.Listened)

@@ -1,12 +1,13 @@
 package services
 
 import (
-	"log"
 	"os"
+	"strconv"
 
 	"github.com/dukex/login2"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
+	"github.com/uhuraapp/uhura-api/entities"
 	"github.com/uhuraapp/uhura-api/models"
 )
 
@@ -40,6 +41,13 @@ func (s AuthService) ByProviderCallback(c *gin.Context) {
 
 	closeHTML := []byte("<html><head></head><body>Loading....<script>window.close()</script></body></html>")
 	c.Data(200, "text/html", closeHTML)
+}
+
+func (s AuthService) GetUser(c *gin.Context) {
+	var user entities.User
+	userId, _ := s.login.CurrentUser(c.Request)
+	s.DB.Table(models.User{}.TableName()).Where("id = ?", userId).First(&user)
+	c.JSON(200, user)
 }
 
 func getProviders(login *login2.Builder) {
