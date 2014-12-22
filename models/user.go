@@ -47,6 +47,16 @@ func (h UserHelpers) SetupFromOAuth(provider string, u *login2.User, rawResponde
 	}
 }
 
+func (h UserHelpers) ByToken(token string) (int64, bool) {
+	var user User
+	err := h.DB.Table(User{}.TableName()).Where("api_token = ?", token).First(&user).Error
+	if err != nil {
+		return 0, false
+	}
+
+	return user.Id, true
+}
+
 //
 
 func (h UserHelpers) findByEmail(email string) (user User, err error) {
@@ -64,6 +74,7 @@ func (h UserHelpers) createFromOAuth(provider string, temp *login2.User) (int64,
 		Picture:    temp.Picture,
 		Locale:     temp.Locale,
 		Name:       temp.Name,
+		ApiToken:   temp.Token,
 	}
 	err := h.DB.Table(User{}.TableName()).Save(&user).Error
 

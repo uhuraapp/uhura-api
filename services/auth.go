@@ -1,10 +1,10 @@
 package services
 
 import (
-	"os"
+	"log"
 	"strconv"
 
-	"github.com/dukex/login2"
+	login "github.com/dukex/login2"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"github.com/uhuraapp/uhura-api/entities"
@@ -12,30 +12,25 @@ import (
 )
 
 type AuthService struct {
-	DB    gorm.DB
-	login *login2.Builder
+	DB gorm.DB
 }
 
 func NewAuthService(db gorm.DB) AuthService {
-	userHelper := models.UserHelpers{DB: db}
-
-	login := login2.NewBuilder()
-	login.UserSetupFn = userHelper.SetupFromOAuth
-
-	getProviders(login)
-	return AuthService{DB: db, login: login}
+	return AuthService{DB: db}
 }
 
 func (s AuthService) ByProvider(c *gin.Context) {
-	s.login.SetReturnTo(c.Writer, c.Request, c.Request.Header.Get("Origin"))
-	authorizer := s.login.OAuthAuthorize(c.Params.ByName("provider"))
+	auth, _ := s.getAuth(c)
+	auth.SetReturnTo(c.Writer, c.Request, c.Request.Header.Get("Origin"))
+	authorizer := auth.OAuthAuthorize(c.Params.ByName("provider"))
 	authorizer(c.Writer, c.Request)
 }
 
 func (s AuthService) ByProviderCallback(c *gin.Context) {
-	userID, err := s.login.OAuthCallback(c.Params.ByName("provider"), c.Request)
+	auth, _ := s.getAuth(c)
+	userID, err := auth.OAuthCallback(c.Params.ByName("provider"), c.Request)
 	if err == nil {
-		session := s.login.Login(c.Request, strconv.FormatInt(userID, 10))
+		session := auth.Login(c.Request, strconv.FormatInt(userID, 10))
 		session.Save(c.Request, c.Writer)
 	}
 
@@ -45,31 +40,25 @@ func (s AuthService) ByProviderCallback(c *gin.Context) {
 
 func (s AuthService) GetUser(c *gin.Context) {
 	var user entities.User
-	userId, _ := s.login.CurrentUser(c.Request)
+	auth, _ := s.getAuth(c)
+
+	userId, _ := auth.CurrentUser(c.Request)
 	s.DB.Table(models.User{}.TableName()).Where("id = ?", userId).First(&user)
 	c.JSON(200, user)
 }
 
-func getProviders(login *login2.Builder) {
-	login.NewProvider(&login2.Provider{
-		RedirectURL: os.Getenv("GOOGLE_CALLBACK_URL"),
-		AuthURL:     "https://accounts.google.com/o/oauth2/auth",
-		TokenURL:    "https://accounts.google.com/o/oauth2/token",
-		Name:        "google",
-		Key:         os.Getenv("GOOGLE_CLIENT_ID"),
-		Secret:      os.Getenv("GOOGLE_CLIENT_SECRET"),
-		Scope:       "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile",
-		UserInfoURL: "https://www.googleapis.com/oauth2/v1/userinfo?alt=json",
-	})
+func (s AuthService) Logout(c *gin.Context) {
+	auth, _ := s.getAuth(c)
+	session := auth.Logout(c.Request)
+	session.Save(c.Request, c.Writer)
 
-	login.NewProvider(&login2.Provider{
-		RedirectURL: os.Getenv("FACEBOOK_CALLBACK_URL"),
-		AuthURL:     "https://www.facebook.com/dialog/oauth",
-		TokenURL:    "https://graph.facebook.com/oauth/access_token",
-		Name:        "facebook",
-		Key:         os.Getenv("FACEBOOK_CLIENT_ID"),
-		Secret:      os.Getenv("FACEBOOK_CLIENT_SECRET"),
-		Scope:       "email",
-		UserInfoURL: "https://graph.facebook.com/me",
-	})
+	c.Data(200, "", []byte(""))
+}
+
+func (s AuthService) getAuth(c *gin.Context) (builder *login.Builder, err error) {
+	var tempInterface interface{}
+	tempInterface, err = c.Get("auth")
+	log.Println(err)
+	builder = tempInterface.(*login.Builder)
+	return
 }

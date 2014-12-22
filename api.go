@@ -31,6 +31,10 @@ func Mount(_r *gin.RouterGroup) {
 	episodes := services.NewEpisodesService(DB)
 	auth := services.NewAuthService(DB)
 
+	_r.Use(middleware.Authentication(DB))
+
+	needAuth := middleware.Protected()
+
 	r := _r.Group("/v2")
 	{
 		r.OPTIONS("*action", func(c *gin.Context) { c.Data(200, "", []byte{}) })
@@ -39,11 +43,12 @@ func Mount(_r *gin.RouterGroup) {
 		r.GET("/auth/:provider", auth.ByProvider)
 		r.GET("/auth/:provider/callback", auth.ByProviderCallback)
 
-		r.GET("/user", middleware.Authentication(), auth.GetUser)
+		r.GET("/user", needAuth, auth.GetUser)
+		r.GET("/user/logout", auth.Logout)
 
-		r.GET("/subscriptions", middleware.Authentication(), subscriptions.Get)
-		r.GET("/suggestions", middleware.Authentication(), suggestions.Get)
-		r.GET("/episodes/:id/listened", middleware.Authentication(), episodes.Listened)
-		r.GET("/episodes/:id/download", middleware.Authentication(), episodes.Download)
+		r.GET("/subscriptions", needAuth, subscriptions.Get)
+		r.GET("/suggestions", needAuth, suggestions.Get)
+		r.GET("/episodes/:id/listened", needAuth, episodes.Listened)
+		r.GET("/episodes/:id/download", needAuth, episodes.Download)
 	}
 }
