@@ -15,8 +15,7 @@ func main() {
 	r := gin.Default()
 	r.Use(middleware.CORS())
 
-	apiRouter := r.Group("/api")
-	Mount(apiRouter)
+	Mount(r.Group("/"))
 
 	log.Println("Listening...")
 	http.ListenAndServe(":"+os.Getenv("PORT"), r)
