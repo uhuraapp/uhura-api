@@ -1,9 +1,9 @@
 package services
 
 import (
-	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
@@ -25,13 +25,14 @@ func (s EpisodeService) Listened(c *gin.Context) {
 	userId, _ := strconv.Atoi(_userId.(string))
 
 	s.DB.Table(models.Episode{}.TableName()).Where("id = ?", episodeId).First(&episode)
-	log.Println(episode)
-	s.DB.Save(&models.Listened{
+	s.DB.Table(models.Listened{}.TableName()).Assign(&models.Listened{
+		Viewed:    true,
+		CreatedAt: time.Now(),
+	}).Where(&models.Listened{
 		UserId:    int64(userId),
 		ItemId:    int64(episodeId),
-		Viewed:    true,
 		ChannelId: episode.ChannelId,
-	})
+	}).FirstOrCreate(&models.Listened{})
 }
 
 func (s EpisodeService) Download(c *gin.Context) {
