@@ -22,15 +22,16 @@ func (s ChannelsService) Get(c *gin.Context) {
 	channelURI := c.Params.ByName("uri")
 
 	s.DB.Table(models.Channel{}.TableName()).Where("uri = ?", channelURI).First(&channel)
-	channel.Episodes, episodes = s.getEpisodesIDs(channel.Id, channelURI)
+	channel.Episodes, episodes = s.getEpisodes(channel.Id, channelURI)
 
 	c.JSON(200, gin.H{"channel": channel, "episodes": episodes})
 }
 
-func (s ChannelsService) getEpisodesIDs(channelID int64, channelUri string) (ids []int64, episodes []*entities.Episode) {
+func (s ChannelsService) getEpisodes(channelID int64, channelUri string) (ids []int64, episodes []*entities.Episode) {
 	s.DB.Table(models.Episode{}.TableName()).
 		Where("channel_id = ?", channelID).
 		Order("published_at DESC").
+		Limit(20).
 		Find(&episodes).
 		Pluck("id", &ids)
 

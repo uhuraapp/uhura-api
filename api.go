@@ -47,6 +47,7 @@ func Mount(_r *gin.RouterGroup) {
 
 		r.GET("/subscriptions", needAuth, subscriptions.Get)
 		r.GET("/suggestions", needAuth, suggestions.Get)
+		r.GET("/episodes", needAuth, episodes.GetPaged)
 		r.GET("/episodes/:id/listened", needAuth, episodes.Listened)
 		r.GET("/episodes/:id/download", needAuth, episodes.Download)
 	}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
+	"github.com/uhuraapp/uhura-api/entities"
 	"github.com/uhuraapp/uhura-api/models"
 )
 
@@ -16,6 +17,20 @@ type EpisodeService struct {
 
 func NewEpisodesService(db gorm.DB) EpisodeService {
 	return EpisodeService{DB: db}
+}
+
+func (s EpisodeService) GetPaged(c *gin.Context) {
+	var episodes []*entities.Episode
+
+	params := c.Request.URL.Query()
+
+	s.DB.Table(models.Episode{}.TableName()).
+		Where("channel_id = ?", params.Get("channel_id")).
+		Order("published_at DESC").
+		Limit(params.Get("per_page")).
+		Find(&episodes)
+
+	c.JSON(200, map[string]interface{}{"episodes": episodes})
 }
 
 func (s EpisodeService) Listened(c *gin.Context) {
