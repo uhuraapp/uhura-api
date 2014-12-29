@@ -17,7 +17,7 @@ func main() {
 
 	Mount(r.Group("/"))
 
-	log.Println("Listening...")
+	log.Println("Listening", os.Getenv("PORT"), "...")
 	http.ListenAndServe(":"+os.Getenv("PORT"), r)
 }
 
