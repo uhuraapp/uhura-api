@@ -27,12 +27,16 @@ func New() gorm.DB {
 
 	database.LogMode(os.Getenv("DEBUG") == "true")
 
+	Migrations(database)
+
 	return database
 }
 
 func Migrations(database gorm.DB) {
-	database.AutoMigrate(models.Episode{})
-	database.AutoMigrate(models.Listened{})
-	database.AutoMigrate(models.Channel{})
-	database.AutoMigrate(models.Subscription{})
+	database.AutoMigrate(&models.Episode{})
+	database.AutoMigrate(&models.Listened{})
+	database.AutoMigrate(&models.Channel{})
+	database.AutoMigrate(&models.Subscription{})
+	database.AutoMigrate(&models.User{})
+	// TODO: CREATE INDEXES
 }
