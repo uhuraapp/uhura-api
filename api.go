@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"os"
 
+	"bitbucket.org/dukex/uhura-api/database"
+	"bitbucket.org/dukex/uhura-api/middleware"
+	"bitbucket.org/dukex/uhura-api/services"
 	"github.com/gin-gonic/gin"
-	"github.com/uhuraapp/uhura-api/database"
-	"github.com/uhuraapp/uhura-api/middleware"
-	"github.com/uhuraapp/uhura-api/services"
 )
 
 func main() {

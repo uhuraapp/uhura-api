@@ -1,8 +1,8 @@
 package entities
 
 import (
+	"bitbucket.org/dukex/uhura-api/models"
 	"github.com/jinzhu/gorm"
-	"github.com/uhuraapp/uhura-api/models"
 )
 
 type Subscription struct {

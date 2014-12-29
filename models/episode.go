@@ -4,9 +4,9 @@ import (
 	"strconv"
 	"time"
 
+	"bitbucket.org/dukex/uhura-api/cache"
+	"bitbucket.org/dukex/uhura-api/helpers"
 	"github.com/jinzhu/gorm"
-	"github.com/uhuraapp/uhura-api/cache"
-	"github.com/uhuraapp/uhura-api/helpers"
 )
 
 type Episode struct {

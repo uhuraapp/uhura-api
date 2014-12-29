@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"time"
 
+	"bitbucket.org/dukex/uhura-api/entities"
+	"bitbucket.org/dukex/uhura-api/models"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
-	"github.com/uhuraapp/uhura-api/entities"
-	"github.com/uhuraapp/uhura-api/models"
 )
 
 type EpisodeService struct {

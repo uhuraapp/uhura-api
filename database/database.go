@@ -4,9 +4,9 @@ import (
 	"log"
 	"os"
 
+	"bitbucket.org/dukex/uhura-api/models"
 	"github.com/jinzhu/gorm"
 	pq "github.com/lib/pq"
-	"github.com/uhuraapp/uhura-api/models"
 )
 
 func New() gorm.DB {

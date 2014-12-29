@@ -4,11 +4,11 @@ import (
 	"log"
 	"strconv"
 
+	"bitbucket.org/dukex/uhura-api/entities"
+	"bitbucket.org/dukex/uhura-api/models"
 	login "github.com/dukex/login2"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
-	"github.com/uhuraapp/uhura-api/entities"
-	"github.com/uhuraapp/uhura-api/models"
 )
 
 type AuthService struct {

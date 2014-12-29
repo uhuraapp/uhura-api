@@ -1,10 +1,10 @@
 package services
 
 import (
+	"bitbucket.org/dukex/uhura-api/cache"
+	"bitbucket.org/dukex/uhura-api/entities"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
-	"github.com/uhuraapp/uhura-api/cache"
-	"github.com/uhuraapp/uhura-api/entities"
 )
 
 type SuggestionsService struct {

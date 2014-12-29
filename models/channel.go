@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	"github.com/uhuraapp/uhura-api/helpers"
+	"bitbucket.org/dukex/uhura-api/helpers"
 )
 
 type Channel struct {

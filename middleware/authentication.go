@@ -3,10 +3,10 @@ package middleware
 import (
 	"os"
 
+	"bitbucket.org/dukex/uhura-api/models"
 	"github.com/dukex/login2"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
-	"github.com/uhuraapp/uhura-api/models"
 )
 
 func Authentication(db gorm.DB) gin.HandlerFunc {
