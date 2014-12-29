@@ -20,6 +20,11 @@ func New() gorm.DB {
 		log.Fatalln(err.Error())
 	}
 
+	err = database.DB().Ping()
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+
 	database.LogMode(os.Getenv("DEBUG") == "true")
 
 	return database
