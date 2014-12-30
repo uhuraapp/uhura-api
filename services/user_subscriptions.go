@@ -9,15 +9,15 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-type SubscriptionService struct {
+type UserSubscriptionService struct {
 	DB gorm.DB
 }
 
-func NewSubscriptionService(db gorm.DB) SubscriptionService {
-	return SubscriptionService{DB: db}
+func NewUserSubscriptionService(db gorm.DB) UserSubscriptionService {
+	return UserSubscriptionService{DB: db}
 }
 
-func (s SubscriptionService) Get(c *gin.Context) {
+func (s UserSubscriptionService) Get(c *gin.Context) {
 	var ids []int
 
 	subscriptions := make([]entities.Subscription, 0)
