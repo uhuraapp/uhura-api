@@ -24,6 +24,7 @@ func main() {
 func Mount(_r *gin.RouterGroup) {
 	DB := database.New()
 
+	userSubscriptions := services.NewUserSubscriptionService(DB)
 	subscriptions := services.NewSubscriptionService(DB)
 	suggestions := services.NewSuggestionsService(DB)
 	channels := services.NewChannelsService(DB)
@@ -50,5 +51,7 @@ func Mount(_r *gin.RouterGroup) {
 		r.GET("/episodes", needAuth, episodes.GetPaged)
 		r.GET("/episodes/:id/listened", needAuth, episodes.Listened)
 		r.GET("/episodes/:id/download", needAuth, episodes.Download)
+
+		r.GET("/subscriptions/top", subscriptions.Top)
 	}
 }
