@@ -1,7 +1,25 @@
 {
-	"ImportPath": "github.com/uhuraapp/uhura-api",
-	"GoVersion": "go1.3",
+	"ImportPath": "bitbucket.org/dukex/uhura-api",
+	"GoVersion": "go1.4",
 	"Deps": [
+		{
+			"ImportPath": "code.google.com/p/go.crypto/bcrypt",
+			"Comment": "null-236",
+			"Rev": "69e2a90ed92d03812364aeb947b7068dc42e561e"
+		},
+		{
+			"ImportPath": "code.google.com/p/goauth2/oauth",
+			"Comment": "weekly-56",
+			"Rev": "afe77d958c701557ec5dc56f6936fcc194d15520"
+		},
+		{
+			"ImportPath": "github.com/dchest/uniuri",
+			"Rev": "dc985c3409977cc7670dc2043f31d60bea764a51"
+		},
+		{
+			"ImportPath": "github.com/dukex/login2",
+			"Rev": "c2cba251a3acd454943f0cdf40eec92e51ba793a"
+		},
 		{
 			"ImportPath": "github.com/dustin/gomemcached",
 			"Rev": "3bc2b0e8fd5d0304d37f246b38cde753803cee41"
@@ -11,9 +29,25 @@
 			"Rev": "311ebb7422d3ff70cc1d064c5a297520ff5f304a"
 		},
 		{
+			"ImportPath": "github.com/franela/goreq",
+			"Rev": "34782208fca504724367694e7f27f166484a0021"
+		},
+		{
 			"ImportPath": "github.com/gin-gonic/gin",
 			"Comment": "v0.4-8-g3b079bb",
 			"Rev": "3b079bb6f79ae501e73a5401c41b589f6616b61e"
+		},
+		{
+			"ImportPath": "github.com/gorilla/context",
+			"Rev": "215affda49addc4c8ef7e2534915df2c8c35c6cd"
+		},
+		{
+			"ImportPath": "github.com/gorilla/securecookie",
+			"Rev": "f0559d009e6943011cd1ba6eb16195cf5e0ed326"
+		},
+		{
+			"ImportPath": "github.com/gorilla/sessions",
+			"Rev": "aa5e036e6c44aec69a32eb41097001978b29ad31"
 		},
 		{
 			"ImportPath": "github.com/jinzhu/gorm",
@@ -30,6 +64,10 @@
 		{
 			"ImportPath": "github.com/ugorji/go/codec",
 			"Rev": "a7f0616e8cd41d08149bec05c87524abe4e0520e"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/blowfish",
+			"Rev": "c89e5683853da5ed97731b507dcd8cda2b11afaf"
 		}
 	]
 }
