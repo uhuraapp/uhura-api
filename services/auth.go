@@ -1,7 +1,6 @@
 package services
 
 import (
-	"log"
 	"strconv"
 
 	"bitbucket.org/dukex/uhura-api/entities"
@@ -44,6 +43,12 @@ func (s AuthService) GetUser(c *gin.Context) {
 
 	userId, _ := auth.CurrentUser(c.Request)
 	s.DB.Table(models.User{}.TableName()).Where("id = ?", userId).First(&user)
+
+	if user.ApiToken == "" {
+		token := login.NewUserToken()
+		s.DB.Model(&user).Update("api_token", token)
+	}
+
 	c.JSON(200, user)
 }
 
@@ -58,7 +63,6 @@ func (s AuthService) Logout(c *gin.Context) {
 func (s AuthService) getAuth(c *gin.Context) (builder *login.Builder, err error) {
 	var tempInterface interface{}
 	tempInterface, err = c.Get("auth")
-	log.Println(err)
 	builder = tempInterface.(*login.Builder)
 	return
 }
