@@ -24,11 +24,17 @@ func (s EpisodeService) GetPaged(c *gin.Context) {
 
 	params := c.Request.URL.Query()
 
-	s.DB.Table(models.Episode{}.TableName()).
+	s.
+		DB.Table(models.Episode{}.TableName()).
 		Where("channel_id = ?", params.Get("channel_id")).
+		Where("published_at < ?", params.Get("since")).
 		Order("published_at DESC").
 		Limit(params.Get("per_page")).
 		Find(&episodes)
+
+	for _, episode := range episodes {
+		episode.ChannelUri = params.Get("channel_id")
+	}
 
 	c.JSON(200, map[string]interface{}{"episodes": episodes})
 }
