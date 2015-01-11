@@ -1,10 +1,8 @@
 package models
 
 import (
-	"strconv"
 	"time"
 
-	"bitbucket.org/dukex/uhura-api/cache"
 	"bitbucket.org/dukex/uhura-api/helpers"
 	"github.com/jinzhu/gorm"
 )
@@ -28,22 +26,9 @@ func (e Episode) TableName() string {
 }
 
 func (e Episode) CountByChannel(database gorm.DB, channelId int64) int64 {
-	var (
-		key           = "c:e:" + strconv.Itoa(int(channelId))
-		episodesCount int64
-	)
+	var episodesCount int64
 
-	cachedEpisodes, err := cache.Get(key, episodesCount)
-	if err == nil {
-		var ok bool
-		episodesCount, ok = cachedEpisodes.(int64)
-		if !ok {
-			episodesCount = int64(episodesCount)
-		}
-	} else {
-		database.Table(e.TableName()).Where("channel_id = ?", channelId).Count(&episodesCount)
-		defer cache.Set(key, episodesCount)
-	}
+	database.Table(e.TableName()).Where("channel_id = ?", channelId).Count(&episodesCount)
 
 	return episodesCount
 }

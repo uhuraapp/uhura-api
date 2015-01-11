@@ -26,7 +26,6 @@ func Mount(_r *gin.RouterGroup) {
 
 	userSubscriptions := services.NewUserSubscriptionService(DB)
 	subscriptions := services.NewSubscriptionService(DB)
-	suggestions := services.NewSuggestionsService(DB)
 	channels := services.NewChannelsService(DB)
 	episodes := services.NewEpisodesService(DB)
 	auth := services.NewAuthService(DB)
