@@ -20,9 +20,17 @@ func (s ChannelsService) Get(c *gin.Context) {
 	var episodes []*entities.Episode
 
 	channelURI := c.Params.ByName("uri")
+	_userId, _ := c.Get("user_id")
+	userId := _userId.(string)
 
 	s.DB.Table(models.Channel{}.TableName()).Where("uri = ?", channelURI).First(&channel)
 	channel.Episodes, episodes = s.getEpisodes(channel.Id, channelURI)
+
+	if userId != "" {
+		channel.Subscribed = s.DB.Table(models.Subscription{}.TableName()).Where("user_id = ?", userId).
+			Where("channel_id = ?", channel.Id).
+			Find(&models.Subscription{}).Error != gorm.RecordNotFound
+	}
 
 	c.JSON(200, gin.H{"channel": channel, "episodes": episodes})
 }
