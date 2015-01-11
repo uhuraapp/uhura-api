@@ -20,6 +20,11 @@ func Authentication(db gorm.DB) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		c.Set("auth", auth)
+
+		if userId, ok := auth.CurrentUser(c.Request); ok {
+			c.Set("user_id", userId)
+		}
+
 		c.Next()
 	}
 }
