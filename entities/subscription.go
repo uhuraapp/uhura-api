@@ -6,11 +6,12 @@ import (
 )
 
 type Subscription struct {
-	Id       int64  `json:"raw_id"`
-	Uri      string `json:"id"`
-	Title    string `json:"title"`
-	ImageUrl string `json:"image_url"`
-	ToView   int64  `json:"to_view"`
+	Id         int64  `json:"raw_id"`
+	Uri        string `json:"id"`
+	Title      string `json:"title"`
+	ImageUrl   string `json:"image_url"`
+	ToView     int64  `json:"to_view"`
+	Subscribed bool   `json:"subscribed"`
 }
 
 func (s *Subscription) GetToView(database gorm.DB, userId string) int64 {

@@ -37,6 +37,7 @@ func Mount(_r *gin.RouterGroup) {
 	r := _r.Group("/v2")
 	{
 		r.OPTIONS("*action", func(c *gin.Context) { c.Data(200, "", []byte{}) })
+
 		r.GET("/channels/:uri", channels.Get)
 
 		r.GET("/auth/:provider", auth.ByProvider)
@@ -44,8 +45,10 @@ func Mount(_r *gin.RouterGroup) {
 
 		r.GET("/user", needAuth, auth.GetUser)
 		r.GET("/users/logout", auth.Logout)
-		r.GET("/users/subscriptions", needAuth, userSubscriptions.Get)
-		r.GET("/users/suggestions", needAuth, suggestions.Get)
+		r.GET("/users/subscriptions", needAuth, userSubscriptions.Index)
+		r.POST("/users/subscriptions", needAuth, userSubscriptions.Create)
+		r.GET("/users/subscriptions/:uri", needAuth, userSubscriptions.Show)
+		r.DELETE("/users/subscriptions/:uri", needAuth, userSubscriptions.Delete)
 
 		r.GET("/episodes", needAuth, episodes.GetPaged)
 		r.GET("/episodes/:id/listened", needAuth, episodes.Listened)
