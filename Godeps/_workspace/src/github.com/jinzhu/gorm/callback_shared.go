@@ -25,7 +25,7 @@ func SaveBeforeAssociations(scope *Scope) {
 				if !value.CanAddr() {
 					// If can't take address, then clone the value and set it back
 					value = reflect.New(value.Type()).Elem()
-					for _, f := range newDB.NewScope(field.Field.Interface()).Fields() {
+					for _, f := range newDB.NewScope(field.Field.Addr().Interface()).Fields() {
 						value.FieldByName(f.Name).Set(reflect.ValueOf(f.Field.Interface()))
 					}
 					scope.SetColumn(field.Name, value.Interface())
@@ -33,7 +33,11 @@ func SaveBeforeAssociations(scope *Scope) {
 				scope.Err(newDB.Save(value.Addr().Interface()).Error)
 
 				if relationship.ForeignKey != "" {
-					scope.SetColumn(relationship.ForeignKey, newDB.NewScope(value.Interface()).PrimaryKeyValue())
+					scope.SetColumn(relationship.ForeignKey, newDB.NewScope(value.Addr().Interface()).PrimaryKeyValue())
+				}
+				if relationship.ForeignType != "" {
+					scope.Err(fmt.Errorf("gorm does not support polymorphic belongs_to associations"))
+					return
 				}
 			}
 		}
@@ -57,10 +61,17 @@ func SaveAfterAssociations(scope *Scope) {
 						if relationship.JoinTable == "" && relationship.ForeignKey != "" {
 							newDB.NewScope(elem).SetColumn(relationship.ForeignKey, scope.PrimaryKeyValue())
 						}
+						if relationship.ForeignType != "" {
+							newDB.NewScope(elem).SetColumn(relationship.ForeignType, scope.TableName())
+						}
 
 						scope.Err(newDB.Save(elem).Error)
 
 						if relationship.JoinTable != "" {
+							if relationship.ForeignType != "" {
+								scope.Err(fmt.Errorf("gorm does not support polymorphic many-to-many associations"))
+							}
+
 							newScope := scope.New(elem)
 							joinTable := relationship.JoinTable
 							foreignKey := ToSnake(relationship.ForeignKey)
@@ -89,17 +100,23 @@ func SaveAfterAssociations(scope *Scope) {
 						if relationship.ForeignKey != "" {
 							newDB.NewScope(value.Addr().Interface()).SetColumn(relationship.ForeignKey, scope.PrimaryKeyValue())
 						}
+						if relationship.ForeignType != "" {
+							newDB.NewScope(value.Addr().Interface()).SetColumn(relationship.ForeignType, scope.TableName())
+						}
 						scope.Err(newDB.Save(value.Addr().Interface()).Error)
 					} else {
 						destValue := reflect.New(field.Field.Type()).Elem()
 
-						for _, f := range newDB.NewScope(field.Field.Interface()).Fields() {
+						for _, f := range newDB.NewScope(field.Field.Addr().Interface()).Fields() {
 							destValue.FieldByName(f.Name).Set(f.Field)
 						}
 
 						elem := destValue.Addr().Interface()
 						if relationship.ForeignKey != "" {
 							newDB.NewScope(elem).SetColumn(relationship.ForeignKey, scope.PrimaryKeyValue())
+						}
+						if relationship.ForeignType != "" {
+							newDB.NewScope(value.Addr().Interface()).SetColumn(relationship.ForeignType, scope.TableName())
 						}
 						scope.Err(newDB.Save(elem).Error)
 						scope.SetColumn(field.Name, destValue.Interface())

@@ -18,7 +18,7 @@
 		},
 		{
 			"ImportPath": "github.com/dukex/login2",
-			"Rev": "c2cba251a3acd454943f0cdf40eec92e51ba793a"
+			"Rev": "c49bc1d83e290816d616dd198d7104aca4dfc718"
 		},
 		{
 			"ImportPath": "github.com/fiam/gounidecode/unidecode",
@@ -59,15 +59,16 @@
 		},
 		{
 			"ImportPath": "github.com/jinzhu/gorm",
-			"Rev": "a405f08f3a81601cf7b77c3c394f7da5881ff0d3"
+			"Rev": "0219fb1cc033bda7ed78c90ed933fb3ecdb6f46f"
 		},
 		{
 			"ImportPath": "github.com/julienschmidt/httprouter",
-			"Rev": "46807412fe50aaceb73bb57061c2230fd26a1640"
+			"Rev": "91101d17f079ca3c05c6e00354e914a35aa0d3e7"
 		},
 		{
 			"ImportPath": "github.com/lib/pq",
-			"Rev": "7175accbed18058468c07811f76440d6e8d7cf19"
+			"Comment": "go1.0-cutoff-8-g3e3efe5",
+			"Rev": "3e3efe51a0c4b23e817075438703cb15bd58c1a8"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/blowfish",

@@ -35,28 +35,37 @@ type DB struct {
 	values        map[string]interface{}
 }
 
-func Open(dialect string, drivesources ...string) (DB, error) {
+func Open(dialect string, args ...interface{}) (DB, error) {
 	var db DB
 	var err error
-	var driver = dialect
 	var source string
+	var dbSql sqlCommon
 
-	if len(drivesources) == 0 {
+	if len(args) == 0 {
 		err = errors.New("invalid database source")
-	} else {
-		if len(drivesources) == 1 {
-			source = drivesources[0]
-		} else if len(drivesources) >= 2 {
-			driver = drivesources[0]
-			source = drivesources[1]
-		}
-
-		db = DB{dialect: NewDialect(dialect), tagIdentifier: "sql",
-			logger: defaultLogger, callback: DefaultCallback, source: source,
-			values: map[string]interface{}{}}
-		db.db, err = sql.Open(driver, source)
-		db.parent = &db
 	}
+
+	switch value := args[0].(type) {
+	case string:
+		var driver = dialect
+		if len(args) == 1 {
+			source = value
+		} else if len(args) >= 2 {
+			driver = value
+			source = args[1].(string)
+		}
+		dbSql, err = sql.Open(driver, source)
+	case sqlCommon:
+		source = reflect.Indirect(reflect.ValueOf(value)).FieldByName("dsn").String()
+		dbSql = value
+	}
+
+	db = DB{dialect: NewDialect(dialect), tagIdentifier: "sql",
+		logger: defaultLogger, callback: DefaultCallback, source: source,
+		values: map[string]interface{}{}}
+	db.db = dbSql
+	db.parent = &db
+
 	return db, err
 }
 
@@ -125,8 +134,8 @@ func (s *DB) Order(value string, reorder ...bool) *DB {
 	return s.clone().search.order(value, reorder...).db
 }
 
-func (s *DB) Select(value interface{}) *DB {
-	return s.clone().search.selects(value).db
+func (s *DB) Select(query interface{}, args ...interface{}) *DB {
+	return s.clone().search.selects(query, args...).db
 }
 
 func (s *DB) Group(query string) *DB {
@@ -363,7 +372,7 @@ func (s *DB) HasTable(value interface{}) bool {
 func (s *DB) AutoMigrate(values ...interface{}) *DB {
 	db := s.clone()
 	for _, value := range values {
-		db = db.NewScope(value).autoMigrate().db
+		db = db.NewScope(value).NeedPtr().autoMigrate().db
 	}
 	return db
 }
@@ -397,6 +406,7 @@ func (s *DB) Association(column string) *Association {
 	scope := s.clone().NewScope(s.Value)
 
 	primaryKey := scope.PrimaryKeyValue()
+	primaryType := scope.TableName()
 	if reflect.DeepEqual(reflect.ValueOf(primaryKey), reflect.Zero(reflect.ValueOf(primaryKey).Type())) {
 		scope.Err(errors.New("primary key can't be nil"))
 	}
@@ -411,7 +421,7 @@ func (s *DB) Association(column string) *Association {
 		scope.Err(fmt.Errorf("%v doesn't have column %v", scope.IndirectValue().Type(), column))
 	}
 
-	return &Association{Scope: scope, Column: column, Error: s.Error, PrimaryKey: primaryKey, Field: field}
+	return &Association{Scope: scope, Column: column, Error: s.Error, PrimaryKey: primaryKey, PrimaryType: primaryType, Field: field}
 }
 
 // Set set value by name

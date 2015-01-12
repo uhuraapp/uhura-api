@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
+	"go/ast"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -129,6 +130,34 @@ func (scope *Scope) buildNotCondition(clause map[string]interface{}) (str string
 	return
 }
 
+func (scope *Scope) buildSelectQuery(clause map[string]interface{}) (str string) {
+	switch value := clause["query"].(type) {
+	case string:
+		str = value
+	case []string:
+		str = strings.Join(value, ", ")
+	}
+
+	args := clause["args"].([]interface{})
+	for _, arg := range args {
+		switch reflect.TypeOf(arg).Kind() {
+		case reflect.Slice:
+			values := reflect.ValueOf(arg)
+			var tempMarks []string
+			for i := 0; i < values.Len(); i++ {
+				tempMarks = append(tempMarks, scope.AddToVars(values.Index(i).Interface()))
+			}
+			str = strings.Replace(str, "?", strings.Join(tempMarks, ","), 1)
+		default:
+			if valuer, ok := interface{}(arg).(driver.Valuer); ok {
+				arg, _ = valuer.Value()
+			}
+			str = strings.Replace(str, "?", scope.Dialect().Quote(fmt.Sprintf("%v", arg)), 1)
+		}
+	}
+	return
+}
+
 func (scope *Scope) where(where ...interface{}) {
 	if len(where) > 0 {
 		scope.Search = scope.Search.clone().where(where[0], where[1:]...)
@@ -180,11 +209,18 @@ func (scope *Scope) whereSql() (sql string) {
 }
 
 func (s *Scope) selectSql() string {
-	if len(s.Search.Select) == 0 {
+	if len(s.Search.Selects) == 0 {
 		return "*"
-	} else {
-		return s.Search.Select
 	}
+
+	var selectQueries []string
+
+	for _, clause := range s.Search.Selects {
+		selectQueries = append(selectQueries, s.buildSelectQuery(clause))
+	}
+
+	return strings.Join(selectQueries, ", ")
+
 }
 
 func (s *Scope) orderSql() string {
@@ -453,29 +489,52 @@ func (scope *Scope) related(value interface{}, foreignKeys ...string) *Scope {
 			foreignKey = keys[1]
 		}
 
+		var relationship *relationship
+		var field *Field
+		var scopeHasField bool
+		if field, scopeHasField = scope.FieldByName(foreignKey); scopeHasField {
+			relationship = field.Relationship
+		}
+
 		if scopeType == "" || scopeType == fromScopeType {
-			if field, ok := scope.FieldByName(foreignKey); ok {
-				relationship := field.Relationship
+			if scopeHasField {
 				if relationship != nil && relationship.ForeignKey != "" {
 					foreignKey = relationship.ForeignKey
-
-					if relationship.Kind == "many_to_many" {
-						joinSql := fmt.Sprintf(
-							"INNER JOIN %v ON %v.%v = %v.%v",
-							scope.Quote(relationship.JoinTable),
-							scope.Quote(relationship.JoinTable),
-							scope.Quote(ToSnake(relationship.AssociationForeignKey)),
-							toScope.QuotedTableName(),
-							scope.Quote(toScope.PrimaryKey()))
-						whereSql := fmt.Sprintf("%v.%v = ?", scope.Quote(relationship.JoinTable), scope.Quote(ToSnake(relationship.ForeignKey)))
-						toScope.db.Joins(joinSql).Where(whereSql, scope.PrimaryKeyValue()).Find(value)
-						return scope
-					}
 				}
 
-				// has one
+				if relationship != nil && relationship.Kind == "many_to_many" {
+					if relationship.ForeignType != "" {
+						scope.Err(fmt.Errorf("gorm does not support polymorphic many-to-many associations"))
+					}
+					joinSql := fmt.Sprintf(
+						"INNER JOIN %v ON %v.%v = %v.%v",
+						scope.Quote(relationship.JoinTable),
+						scope.Quote(relationship.JoinTable),
+						scope.Quote(ToSnake(relationship.AssociationForeignKey)),
+						toScope.QuotedTableName(),
+						scope.Quote(toScope.PrimaryKey()))
+					whereSql := fmt.Sprintf("%v.%v = ?", scope.Quote(relationship.JoinTable), scope.Quote(ToSnake(relationship.ForeignKey)))
+					toScope.db.Joins(joinSql).Where(whereSql, scope.PrimaryKeyValue()).Find(value)
+					return scope
+				}
+
+				// has many or has one
+				if toScope.HasColumn(foreignKey) {
+					toScope.inlineCondition(fmt.Sprintf("%v = ?", scope.Quote(ToSnake(foreignKey))), scope.PrimaryKeyValue())
+					if relationship != nil && relationship.ForeignType != "" && toScope.HasColumn(relationship.ForeignType) {
+						toScope.inlineCondition(fmt.Sprintf("%v = ?", scope.Quote(ToSnake(relationship.ForeignType))), scope.TableName())
+					}
+					toScope.callCallbacks(scope.db.parent.callback.queries)
+					return scope
+				}
+
+				// belongs to
 				if foreignValue, err := scope.FieldValueByName(foreignKey); err == nil {
 					sql := fmt.Sprintf("%v = ?", scope.Quote(toScope.PrimaryKey()))
+					if relationship != nil && relationship.ForeignType != "" && scope.HasColumn(relationship.ForeignType) {
+						scope.Err(fmt.Errorf("gorm does not support polymorphic belongs_to associations"))
+						return scope
+					}
 					toScope.inlineCondition(sql, foreignValue).callCallbacks(scope.db.parent.callback.queries)
 					return scope
 				}
@@ -483,7 +542,7 @@ func (scope *Scope) related(value interface{}, foreignKeys ...string) *Scope {
 		}
 
 		if scopeType == "" || scopeType == toScopeType {
-			// has many
+			// has many or has one in foreign scope
 			if toScope.HasColumn(foreignKey) {
 				sql := fmt.Sprintf("%v = ?", scope.Quote(ToSnake(foreignKey)))
 				return toScope.inlineCondition(sql, scope.PrimaryKeyValue()).callCallbacks(scope.db.parent.callback.queries)
@@ -512,12 +571,20 @@ func (scope *Scope) createJoinTable(field *Field) {
 
 func (scope *Scope) createTable() *Scope {
 	var sqls []string
-	for _, field := range scope.Fields() {
-		if field.IsNormal {
-			sqlTag := scope.sqlTagForField(field)
-			sqls = append(sqls, scope.Quote(field.DBName)+" "+sqlTag)
+	fields := scope.Fields()
+	scopeType := scope.IndirectValue().Type()
+	for i := 0; i < scopeType.NumField(); i++ {
+		if !ast.IsExported(scopeType.Field(i).Name) {
+			continue
 		}
-		scope.createJoinTable(field)
+		for _, field := range scope.fieldFromStruct(scopeType.Field(i), false) {
+			field = fields[field.DBName]
+			if field.IsNormal {
+				sqlTag := scope.sqlTagForField(field)
+				sqls = append(sqls, scope.Quote(field.DBName)+" "+sqlTag)
+			}
+			scope.createJoinTable(field)
+		}
 	}
 	scope.Raw(fmt.Sprintf("CREATE TABLE %v (%v)", scope.QuotedTableName(), strings.Join(sqls, ","))).Exec()
 	return scope

@@ -24,18 +24,25 @@ func Create(scope *Scope) {
 	if !scope.HasError() {
 		// set create sql
 		var sqls, columns []string
-
 		for _, field := range scope.Fields() {
 			if field.IsNormal && (!field.IsPrimaryKey || !scope.PrimaryKeyZero()) {
+				if field.DefaultValue != nil && field.IsBlank {
+					continue
+				}
 				columns = append(columns, scope.Quote(field.DBName))
 				sqls = append(sqls, scope.AddToVars(field.Field.Interface()))
 			}
 		}
 
+		returningKey := "*"
+		if scope.PrimaryKey() != "" {
+			returningKey = scope.PrimaryKey()
+		}
+
 		if len(columns) == 0 {
 			scope.Raw(fmt.Sprintf("INSERT INTO %v DEFAULT VALUES %v",
 				scope.QuotedTableName(),
-				scope.Dialect().ReturningStr(scope.PrimaryKey()),
+				scope.Dialect().ReturningStr(scope.TableName(), returningKey),
 			))
 		} else {
 			scope.Raw(fmt.Sprintf(
@@ -43,7 +50,7 @@ func Create(scope *Scope) {
 				scope.QuotedTableName(),
 				strings.Join(columns, ","),
 				strings.Join(sqls, ","),
-				scope.Dialect().ReturningStr(scope.PrimaryKey()),
+				scope.Dialect().ReturningStr(scope.TableName(), returningKey),
 			))
 		}
 
@@ -53,18 +60,22 @@ func Create(scope *Scope) {
 			if result, err := scope.DB().Exec(scope.Sql, scope.SqlVars...); scope.Err(err) == nil {
 				id, err = result.LastInsertId()
 				if scope.Err(err) == nil {
-					if count, err := result.RowsAffected(); err == nil {
-						scope.db.RowsAffected = count
-					}
+					scope.db.RowsAffected, _ = result.RowsAffected()
 				}
 			}
 		} else {
-			if scope.Err(scope.DB().QueryRow(scope.Sql, scope.SqlVars...).Scan(&id)) == nil {
-				scope.db.RowsAffected = 1
+			if scope.PrimaryKey() == "" {
+				if results, err := scope.DB().Exec(scope.Sql, scope.SqlVars...); err != nil {
+					scope.db.RowsAffected, _ = results.RowsAffected()
+				}
+			} else {
+				if scope.Err(scope.DB().QueryRow(scope.Sql, scope.SqlVars...).Scan(&id)) == nil {
+					scope.db.RowsAffected = 1
+				}
 			}
 		}
 
-		if !scope.HasError() && scope.PrimaryKeyZero() {
+		if scope.PrimaryKey() != "" && !scope.HasError() && scope.PrimaryKeyZero() {
 			scope.SetColumn(scope.PrimaryKey(), id)
 		}
 	}

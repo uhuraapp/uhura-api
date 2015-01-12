@@ -10,6 +10,7 @@ import (
 type relationship struct {
 	JoinTable             string
 	ForeignKey            string
+	ForeignType           string
 	AssociationForeignKey string
 	Kind                  string
 }
@@ -24,6 +25,7 @@ type Field struct {
 	IsBlank      bool
 	IsIgnored    bool
 	IsPrimaryKey bool
+	DefaultValue interface{}
 }
 
 func (field *Field) IsScanner() bool {

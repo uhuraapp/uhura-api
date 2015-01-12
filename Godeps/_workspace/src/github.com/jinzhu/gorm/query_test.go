@@ -146,8 +146,8 @@ func TestSearchWithPlainSQL(t *testing.T) {
 		t.Errorf("Should found 1 users, but got %v", len(users))
 	}
 
-	if !DB.Where("name = ?", "none existing").Find(&[]User{}).RecordNotFound() {
-		t.Errorf("Should get RecordNotFound error when looking for none existing records")
+	if DB.Where("name = ?", "none existing").Find(&[]User{}).RecordNotFound() {
+		t.Errorf("Should not get RecordNotFound error when looking for none existing records")
 	}
 }
 
@@ -535,5 +535,31 @@ func TestSelectWithEscapedFieldName(t *testing.T) {
 
 	if len(names) != 3 {
 		t.Errorf("Expected 3 name, but got: %d", len(names))
+	}
+}
+
+func TestSelectWithVariables(t *testing.T) {
+	DB.Save(&User{Name: "jinzhu"})
+
+	rows, _ := DB.Table("users").Select("? as fake", "name").Rows()
+
+	if !rows.Next() {
+		t.Errorf("Should have returned at least one row")
+	} else {
+		columns, _ := rows.Columns()
+		if !reflect.DeepEqual(columns, []string{"fake"}) {
+			t.Errorf("Should only contains one column")
+		}
+	}
+}
+
+func TestSelectWithArrayInput(t *testing.T) {
+	DB.Save(&User{Name: "jinzhu", Age: 42})
+
+	var user User
+	DB.Select([]string{"name", "age"}).Where("age = 42 AND name = 'jinzhu'").First(&user)
+
+	if user.Name != "jinzhu" || user.Age != 42 {
+		t.Errorf("Should have selected both age and name")
 	}
 }

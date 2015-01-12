@@ -125,11 +125,19 @@ func (i *Num) Scan(src interface{}) error {
 }
 
 type Animal struct {
-	Counter   uint64 `gorm:"primary_key:yes"`
-	Name      string
-	From      string //test reserved sql keyword as field name
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	Counter    uint64    `gorm:"primary_key:yes"`
+	Name       string    `sql:"DEFAULT:'galeone'"`
+	From       string    //test reserved sql keyword as field name
+	Age        time.Time `sql:"DEFAULT:current_timestamp"`
+	unexported string    // unexported value
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+}
+
+type JoinTable struct {
+	From uint64
+	To   uint64
+	Time time.Time `sql:"default: null"`
 }
 
 type Post struct {
