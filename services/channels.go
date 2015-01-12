@@ -18,10 +18,14 @@ func NewChannelsService(db gorm.DB) ChannelsService {
 func (s ChannelsService) Get(c *gin.Context) {
 	var channel entities.Channel
 	var episodes []*entities.Episode
+	var userId string
 
 	channelURI := c.Params.ByName("uri")
-	_userId, _ := c.Get("user_id")
-	userId := _userId.(string)
+
+	_userId, err := c.Get("user_id")
+	if err == nil {
+		userId = _userId.(string)
+	}
 
 	s.DB.Table(models.Channel{}.TableName()).Where("uri = ?", channelURI).First(&channel)
 	channel.Episodes, episodes = s.getEpisodes(channel.Id, channelURI)

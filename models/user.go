@@ -49,6 +49,11 @@ func (h UserHelpers) SetupFromOAuth(provider string, u *login2.User, rawResponde
 
 func (h UserHelpers) ByToken(token string) (int64, bool) {
 	var user User
+
+	if token == "" {
+		return 0, false
+	}
+
 	err := h.DB.Table(User{}.TableName()).Where("api_token = ?", token).First(&user).Error
 	if err != nil {
 		return 0, false
