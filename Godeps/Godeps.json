@@ -21,16 +21,20 @@
 			"Rev": "c2cba251a3acd454943f0cdf40eec92e51ba793a"
 		},
 		{
-			"ImportPath": "github.com/dustin/gomemcached",
-			"Rev": "3bc2b0e8fd5d0304d37f246b38cde753803cee41"
-		},
-		{
 			"ImportPath": "github.com/fiam/gounidecode/unidecode",
 			"Rev": "311ebb7422d3ff70cc1d064c5a297520ff5f304a"
 		},
 		{
 			"ImportPath": "github.com/franela/goreq",
 			"Rev": "34782208fca504724367694e7f27f166484a0021"
+		},
+		{
+			"ImportPath": "github.com/garyburd/redigo/internal",
+			"Rev": "61e2910408efd40dafb3c7d856a4cf8aeb5fb1c6"
+		},
+		{
+			"ImportPath": "github.com/garyburd/redigo/redis",
+			"Rev": "61e2910408efd40dafb3c7d856a4cf8aeb5fb1c6"
 		},
 		{
 			"ImportPath": "github.com/gin-gonic/gin",
@@ -50,6 +54,10 @@
 			"Rev": "aa5e036e6c44aec69a32eb41097001978b29ad31"
 		},
 		{
+			"ImportPath": "github.com/hjr265/too",
+			"Rev": "9ecde9c8935e0252fab39816e45c51691883c197"
+		},
+		{
 			"ImportPath": "github.com/jinzhu/gorm",
 			"Rev": "a405f08f3a81601cf7b77c3c394f7da5881ff0d3"
 		},
@@ -60,10 +68,6 @@
 		{
 			"ImportPath": "github.com/lib/pq",
 			"Rev": "7175accbed18058468c07811f76440d6e8d7cf19"
-		},
-		{
-			"ImportPath": "github.com/ugorji/go/codec",
-			"Rev": "a7f0616e8cd41d08149bec05c87524abe4e0520e"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/blowfish",
