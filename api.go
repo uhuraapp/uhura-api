@@ -33,6 +33,7 @@ func Mount(_r *gin.RouterGroup) {
 	channels := services.NewChannelsService(DB)
 	episodes := services.NewEpisodesService(DB)
 	auth := services.NewAuthService(DB)
+	categories := services.NewCategoriesService(DB)
 
 	_r.Use(middleware.Authentication(DB))
 
@@ -59,6 +60,7 @@ func Mount(_r *gin.RouterGroup) {
 		r.GET("/episodes/:id/download", needAuth, episodes.Download)
 
 		r.GET("/subscriptions/top", subscriptions.Top)
+		r.GET("/categories", categories.Index)
 	}
 
 	// GetRecommendations(DB)
