@@ -2,6 +2,7 @@ package services
 
 import (
 	"bitbucket.org/dukex/uhura-api/entities"
+	"bitbucket.org/dukex/uhura-api/helpers"
 	"bitbucket.org/dukex/uhura-api/models"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
@@ -28,7 +29,7 @@ func (s ChannelsService) Get(c *gin.Context) {
 	}
 
 	s.DB.Table(models.Channel{}.TableName()).Where("uri = ?", channelURI).First(&channel)
-	channel.Episodes, episodes = s.getEpisodes(channel.Id, channelURI)
+	channel.Episodes, episodes = s.getEpisodes(channel.Id, channelURI, userId)
 
 	if userId != "" {
 		channel.Subscribed = s.DB.Table(models.Subscription{}.TableName()).Where("user_id = ?", userId).
@@ -39,7 +40,7 @@ func (s ChannelsService) Get(c *gin.Context) {
 	c.JSON(200, gin.H{"channel": channel, "episodes": episodes})
 }
 
-func (s ChannelsService) getEpisodes(channelID int64, channelUri string) (ids []int64, episodes []*entities.Episode) {
+func (s ChannelsService) getEpisodes(channelID int64, channelUri string, userId string) (ids []int64, episodes []*entities.Episode) {
 	s.DB.Table(models.Episode{}.TableName()).
 		Where("channel_id = ?", channelID).
 		Order("published_at DESC").
@@ -47,8 +48,17 @@ func (s ChannelsService) getEpisodes(channelID int64, channelUri string) (ids []
 		Find(&episodes).
 		Pluck("id", &ids)
 
+	var listeneds []int64
+
+	s.DB.Table(models.Listened{}.TableName()).
+		Where("item_id IN (?)", ids).
+		Where("viewed = true").
+		Where("user_id = ?", userId).
+		Pluck("item_id", &listeneds)
+
 	for _, episode := range episodes {
 		episode.ChannelUri = channelUri
+		episode.Listened = helpers.Contains(listeneds, episode.Id)
 	}
 
 	return
