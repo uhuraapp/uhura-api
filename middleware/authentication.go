@@ -38,7 +38,7 @@ func Protected() gin.HandlerFunc {
 			c.Set("user_id", userId)
 			c.Next()
 		} else {
-			c.Abort(403)
+			c.AbortWithStatus(403)
 		}
 	}
 }

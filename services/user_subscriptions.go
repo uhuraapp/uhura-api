@@ -76,7 +76,7 @@ func (s UserSubscriptionService) Delete(c *gin.Context) {
 		c.JSON(200, gin.H{"subscription": channel})
 	}
 
-	c.Abort(404)
+	c.AbortWithStatus(404)
 }
 
 func (s UserSubscriptionService) Create(c *gin.Context) {
@@ -92,7 +92,7 @@ func (s UserSubscriptionService) Create(c *gin.Context) {
 	decoder := json.NewDecoder(c.Request.Body)
 	err := decoder.Decode(&sp)
 	if err != nil {
-		c.Abort(500)
+		c.AbortWithStatus(500)
 	}
 
 	_userId, _ := c.Get("user_id")
@@ -110,6 +110,6 @@ func (s UserSubscriptionService) Create(c *gin.Context) {
 		channel.Subscribed = true
 		c.JSON(200, gin.H{"subscription": channel})
 	} else {
-		c.Abort(404)
+		c.AbortWithStatus(404)
 	}
 }

@@ -19,7 +19,7 @@ func NewSubscriptionService(db gorm.DB) SubscriptionService {
 func (s SubscriptionService) Top(c *gin.Context) {
 	data, err := gpodder.Top("20")
 	if err != nil {
-		c.Abort(500)
+		c.AbortWithStatus(500)
 	}
 
 	channels := make([]entities.Channel, len(data))
