@@ -48,7 +48,7 @@ func Mount(_r *gin.RouterGroup) {
 		r.GET("/auth/:provider", auth.ByProvider)
 		r.GET("/auth/:provider/callback", auth.ByProviderCallback)
 
-		r.GET("/user", needAuth, auth.GetUser)
+		r.GET("/user", auth.GetUser)
 		r.GET("/users/logout", auth.Logout)
 		r.GET("/users/subscriptions", needAuth, userSubscriptions.Index)
 		r.POST("/users/subscriptions", needAuth, userSubscriptions.Create)
