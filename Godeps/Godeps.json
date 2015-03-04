@@ -14,7 +14,7 @@
 		},
 		{
 			"ImportPath": "github.com/dchest/uniuri",
-			"Rev": "dc985c3409977cc7670dc2043f31d60bea764a51"
+			"Rev": "87c54b9ba5a02ac5745160d06820ae9094db7b6f"
 		},
 		{
 			"ImportPath": "github.com/dukex/login2",
@@ -26,20 +26,20 @@
 		},
 		{
 			"ImportPath": "github.com/franela/goreq",
-			"Rev": "34782208fca504724367694e7f27f166484a0021"
+			"Rev": "5b647289f142b20a04479865775135b76e23cab8"
 		},
 		{
 			"ImportPath": "github.com/garyburd/redigo/internal",
-			"Rev": "61e2910408efd40dafb3c7d856a4cf8aeb5fb1c6"
+			"Rev": "535138d7bcd717d6531c701ef5933d98b1866257"
 		},
 		{
 			"ImportPath": "github.com/garyburd/redigo/redis",
-			"Rev": "61e2910408efd40dafb3c7d856a4cf8aeb5fb1c6"
+			"Rev": "535138d7bcd717d6531c701ef5933d98b1866257"
 		},
 		{
 			"ImportPath": "github.com/gin-gonic/gin",
-			"Comment": "v0.4-8-g3b079bb",
-			"Rev": "3b079bb6f79ae501e73a5401c41b589f6616b61e"
+			"Comment": "v0.5",
+			"Rev": "50e7e427300a7eeeb299a4cd5bc1ebfa04d48528"
 		},
 		{
 			"ImportPath": "github.com/gorilla/context",
@@ -47,11 +47,11 @@
 		},
 		{
 			"ImportPath": "github.com/gorilla/securecookie",
-			"Rev": "f0559d009e6943011cd1ba6eb16195cf5e0ed326"
+			"Rev": "5f171f42328bdd573211bb82bdee8f259c4c61ae"
 		},
 		{
 			"ImportPath": "github.com/gorilla/sessions",
-			"Rev": "aa5e036e6c44aec69a32eb41097001978b29ad31"
+			"Rev": "1f45645972a051deb63c8e8e3c594041a6145e35"
 		},
 		{
 			"ImportPath": "github.com/hjr265/too",
@@ -59,20 +59,20 @@
 		},
 		{
 			"ImportPath": "github.com/jinzhu/gorm",
-			"Rev": "0219fb1cc033bda7ed78c90ed933fb3ecdb6f46f"
+			"Rev": "61a878dc2db933e665471741005a2ce8730f715c"
 		},
 		{
 			"ImportPath": "github.com/julienschmidt/httprouter",
-			"Rev": "91101d17f079ca3c05c6e00354e914a35aa0d3e7"
+			"Rev": "b428fda53bb0a764fea9c76c9413512eda291dec"
 		},
 		{
 			"ImportPath": "github.com/lib/pq",
-			"Comment": "go1.0-cutoff-8-g3e3efe5",
-			"Rev": "3e3efe51a0c4b23e817075438703cb15bd58c1a8"
+			"Comment": "go1.0-cutoff-28-g72d960f",
+			"Rev": "72d960fe96ac86dfd376b0de7ca81c0334838d0b"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/blowfish",
-			"Rev": "c89e5683853da5ed97731b507dcd8cda2b11afaf"
+			"Rev": "1351f936d976c60a0a48d728281922cf63eafb8d"
 		}
 	]
 }

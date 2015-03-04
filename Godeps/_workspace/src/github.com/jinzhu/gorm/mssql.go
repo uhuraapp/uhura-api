@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 )
 
 type mssql struct{}
@@ -20,7 +21,7 @@ func (s *mssql) HasTop() bool {
 	return true
 }
 
-func (d *mssql) SqlTag(value reflect.Value, size int) string {
+func (s *mssql) SqlTag(value reflect.Value, size int) string {
 	switch value.Kind() {
 	case reflect.Bool:
 		return "bit"
@@ -33,32 +34,30 @@ func (d *mssql) SqlTag(value reflect.Value, size int) string {
 	case reflect.String:
 		if size > 0 && size < 65532 {
 			return fmt.Sprintf("nvarchar(%d)", size)
-		} else {
-			return "text"
 		}
+		return "text"
 	case reflect.Struct:
-		if value.Type() == timeType {
+		if _, ok := value.Interface().(time.Time); ok {
 			return "datetime2"
 		}
 	default:
 		if _, ok := value.Interface().([]byte); ok {
 			if size > 0 && size < 65532 {
 				return fmt.Sprintf("varchar(%d)", size)
-			} else {
-				return "text"
 			}
+			return "text"
 		}
 	}
 	panic(fmt.Sprintf("invalid sql type %s (%s) for mssql", value.Type().Name(), value.Kind().String()))
 }
 
 func (s *mssql) PrimaryKeyTag(value reflect.Value, size int) string {
-	suffix_str := " IDENTITY(1,1) PRIMARY KEY"
+	suffix := " IDENTITY(1,1) PRIMARY KEY"
 	switch value.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uintptr:
-		return "int" + suffix_str
+		return "int" + suffix
 	case reflect.Int64, reflect.Uint64:
-		return "bigint" + suffix_str
+		return "bigint" + suffix
 	default:
 		panic("Invalid primary key type")
 	}
@@ -89,26 +88,16 @@ func (s *mssql) databaseName(scope *Scope) string {
 
 func (s *mssql) HasTable(scope *Scope, tableName string) bool {
 	var count int
-	newScope := scope.New(nil)
-	newScope.Raw(fmt.Sprintf("SELECT count(*) FROM INFORMATION_SCHEMA.tables where table_name = %v AND table_catalog = %v",
-		newScope.AddToVars(tableName),
-		newScope.AddToVars(s.databaseName(scope))))
-	newScope.DB().QueryRow(newScope.Sql, newScope.SqlVars...).Scan(&count)
+	scope.NewDB().Raw("SELECT count(*) FROM INFORMATION_SCHEMA.tables WHERE table_name = ? AND table_catalog = ?", tableName, s.databaseName(scope)).Row().Scan(&count)
 	return count > 0
 }
 
 func (s *mssql) HasColumn(scope *Scope, tableName string, columnName string) bool {
 	var count int
-	newScope := scope.New(nil)
-	newScope.Raw(fmt.Sprintf("SELECT count(*) FROM information_schema.columns WHERE TABLE_CATALOG = %v AND table_name = %v AND column_name = %v",
-		newScope.AddToVars(s.databaseName(scope)),
-		newScope.AddToVars(tableName),
-		newScope.AddToVars(columnName),
-	))
-	newScope.DB().QueryRow(newScope.Sql, newScope.SqlVars...).Scan(&count)
+	scope.NewDB().Raw("SELECT count(*) FROM information_schema.columns WHERE table_catalog = ? AND table_name = ? AND column_name = ?", s.databaseName(scope), tableName, columnName).Row().Scan(&count)
 	return count > 0
 }
 
 func (s *mssql) RemoveIndex(scope *Scope, indexName string) {
-	scope.Raw(fmt.Sprintf("DROP INDEX %v ON %v", indexName, scope.QuotedTableName())).Exec()
+	scope.NewDB().Exec(fmt.Sprintf("DROP INDEX %v ON %v", indexName, scope.QuotedTableName()))
 }

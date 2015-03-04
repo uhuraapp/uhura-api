@@ -22,20 +22,17 @@
 // read from it.
 package uniuri
 
-import (
-	"crypto/rand"
-	"io"
-)
+import "crypto/rand"
 
 const (
-	// Standard length of uniuri string to achive ~95 bits of entropy.
+	// StdLen is a standard length of uniuri string to achive ~95 bits of entropy.
 	StdLen = 16
-	// Length of uniurl string to achive ~119 bits of entropy, closest
+	// UUIDLen is a length of uniuri string to achive ~119 bits of entropy, closest
 	// to what can be losslessly converted to UUIDv4 (122 bits).
 	UUIDLen = 20
 )
 
-// Standard characters allowed in uniuri string.
+// StdChars is a set of standard characters allowed in uniuri string.
 var StdChars = []byte("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")
 
 // New returns a new random string of the standard length, consisting of
@@ -53,16 +50,19 @@ func NewLen(length int) string {
 // NewLenChars returns a new random string of the provided length, consisting
 // of the provided byte slice of allowed characters (maximum 256).
 func NewLenChars(length int, chars []byte) string {
-	b := make([]byte, length)
-	r := make([]byte, length+(length/4)) // storage for random bytes.
+	if length == 0 {
+		return ""
+	}
 	clen := len(chars)
 	if clen > 256 {
 		panic("uniuri: maximum length of charset for NewLenChars is 256")
 	}
 	maxrb := 256 - (256 % clen)
+	b := make([]byte, length)
+	r := make([]byte, length+(length/4)) // storage for random bytes.
 	i := 0
 	for {
-		if _, err := io.ReadFull(rand.Reader, r); err != nil {
+		if _, err := rand.Read(r); err != nil {
 			panic("error reading from random source: " + err.Error())
 		}
 		for _, rb := range r {
@@ -78,5 +78,4 @@ func NewLenChars(length int, chars []byte) string {
 			}
 		}
 	}
-	panic("unreachable")
 }

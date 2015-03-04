@@ -10,7 +10,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/lib/pq/oid"
 	"io"
 	"io/ioutil"
 	"net"
@@ -22,6 +21,8 @@ import (
 	"strings"
 	"time"
 	"unicode"
+
+	"github.com/lib/pq/oid"
 )
 
 // Common error types
@@ -30,6 +31,7 @@ var (
 	ErrInFailedTransaction       = errors.New("pq: Could not complete operation in a failed transaction")
 	ErrSSLNotSupported           = errors.New("pq: SSL is not enabled on the server")
 	ErrSSLKeyHasWorldPermissions = errors.New("pq: Private key file has group or world access. Permissions should be u=rw (0600) or less.")
+	ErrCouldNotDetectUsername    = errors.New("pq: Could not detect default username. Please provide one explicitly.")
 )
 
 type drv struct{}
@@ -211,17 +213,17 @@ func DialOpen(d Dialer, name string) (_ driver.Conn, err error) {
 	cn.buf = bufio.NewReader(cn.c)
 	cn.startup(o)
 	// reset the deadline, in case one was set (see dial)
-	err = cn.c.SetDeadline(time.Time{})
+	if timeout := o.Get("connect_timeout"); timeout != "" && timeout != "0" {
+		err = cn.c.SetDeadline(time.Time{})
+	}
 	return cn, err
 }
 
 func dial(d Dialer, o values) (net.Conn, error) {
 	ntw, addr := network(o)
 
-	timeout := o.Get("connect_timeout")
-
 	// Zero or not specified means wait indefinitely.
-	if timeout != "" && timeout != "0" {
+	if timeout := o.Get("connect_timeout"); timeout != "" && timeout != "0" {
 		seconds, err := strconv.ParseInt(timeout, 10, 0)
 		if err != nil {
 			return nil, fmt.Errorf("invalid value for parameter connect_timeout: %s", err)
@@ -435,6 +437,9 @@ func (cn *conn) Commit() (err error) {
 
 	_, commandTag, err := cn.simpleExec("COMMIT")
 	if err != nil {
+		if cn.isInTransaction() {
+			cn.bad = true
+		}
 		return err
 	}
 	if commandTag != "COMMIT" {
@@ -454,6 +459,9 @@ func (cn *conn) Rollback() (err error) {
 	cn.checkIsInTransaction(true)
 	_, commandTag, err := cn.simpleExec("ROLLBACK")
 	if err != nil {
+		if cn.isInTransaction() {
+			cn.bad = true
+		}
 		return err
 	}
 	if commandTag != "ROLLBACK" {
@@ -862,7 +870,6 @@ func (cn *conn) verifyCA(client *tls.Conn, tlsConf *tls.Config) {
 		panic(err)
 	}
 }
-
 
 // This function sets up SSL client certificates based on either the "sslkey"
 // and "sslcert" settings (possibly set via the environment variables PGSSLKEY

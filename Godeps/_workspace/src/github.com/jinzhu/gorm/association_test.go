@@ -1,29 +1,9 @@
 package gorm_test
 
-import "testing"
-import "github.com/jinzhu/gorm"
-
-type Cat struct {
-	Id   int
-	Name string
-	Toy  Toy `gorm:"polymorphic:Owner;"`
-}
-
-type Dog struct {
-	Id   int
-	Name string
-	Toys []Toy `gorm:"polymorphic:Owner;"`
-}
-
-type Toy struct {
-	Id        int
-	Name      string
-	OwnerId   int
-	OwnerType string
-
-	// Define the owner type as a belongs_to so we can ensure it throws an error
-	Owner Dog `gorm:"foreignkey:owner_id; foreigntype:owner_type;"`
-}
+import (
+	"fmt"
+	"testing"
+)
 
 func TestHasOneAndHasManyAssociation(t *testing.T) {
 	DB.DropTable(Category{})
@@ -37,7 +17,7 @@ func TestHasOneAndHasManyAssociation(t *testing.T) {
 	post := Post{
 		Title:        "post 1",
 		Body:         "body 1",
-		Comments:     []Comment{{Content: "Comment 1"}, {Content: "Comment 2"}},
+		Comments:     []*Comment{{Content: "Comment 1"}, {Content: "Comment 2"}},
 		Category:     Category{Name: "Category 1"},
 		MainCategory: Category{Name: "Main Category 1"},
 	}
@@ -84,15 +64,16 @@ func TestRelated(t *testing.T) {
 		ShippingAddress: Address{Address1: "Shipping Address - Address 1"},
 		Emails:          []Email{{Email: "jinzhu@example.com"}, {Email: "jinzhu-2@example@example.com"}},
 		CreditCard:      CreditCard{Number: "1234567890"},
+		Company:         Company{Name: "company1"},
 	}
 
 	DB.Save(&user)
 
-	if user.CreditCard.Id == 0 {
+	if user.CreditCard.ID == 0 {
 		t.Errorf("After user save, credit card should have id")
 	}
 
-	if user.BillingAddress.Id == 0 {
+	if user.BillingAddress.ID == 0 {
 		t.Errorf("After user save, billing address should have id")
 	}
 
@@ -147,6 +128,11 @@ func TestRelated(t *testing.T) {
 	if !DB.Model(&CreditCard{}).Related(&User{}).RecordNotFound() {
 		t.Errorf("RecordNotFound for Related")
 	}
+
+	var company Company
+	if DB.Model(&user).Related(&company, "Company").RecordNotFound() || company.Name != "company1" {
+		t.Errorf("RecordNotFound for Related")
+	}
 }
 
 func TestManyToMany(t *testing.T) {
@@ -195,10 +181,13 @@ func TestManyToMany(t *testing.T) {
 	}
 
 	// Delete
+	user.Languages = []Language{}
+	DB.Model(&user).Association("Languages").Find(&user.Languages)
+
 	var language Language
 	DB.Where("name = ?", "EE").First(&language)
 	DB.Model(&user).Association("Languages").Delete(language, &language)
-	if DB.Model(&user).Association("Languages").Count() != len(totalLanguages)-1 {
+	if DB.Model(&user).Association("Languages").Count() != len(totalLanguages)-1 || len(user.Languages) != len(totalLanguages)-1 {
 		t.Errorf("Relations should be deleted with Delete")
 	}
 	if DB.Where("name = ?", "EE").First(&Language{}).RecordNotFound() {
@@ -207,69 +196,69 @@ func TestManyToMany(t *testing.T) {
 
 	languages = []Language{}
 	DB.Where("name IN (?)", []string{"CC", "DD"}).Find(&languages)
+
+	user2 := User{Name: "Many2Many_User2", Languages: languages}
+	DB.Save(&user2)
+
 	DB.Model(&user).Association("Languages").Delete(languages, &languages)
-	if DB.Model(&user).Association("Languages").Count() != len(totalLanguages)-3 {
+	if DB.Model(&user).Association("Languages").Count() != len(totalLanguages)-3 || len(user.Languages) != len(totalLanguages)-3 {
 		t.Errorf("Relations should be deleted with Delete")
+	}
+
+	if DB.Model(&user2).Association("Languages").Count() == 0 {
+		t.Errorf("Other user's relations should not be deleted")
 	}
 
 	// Replace
 	var languageB Language
 	DB.Where("name = ?", "BB").First(&languageB)
 	DB.Model(&user).Association("Languages").Replace(languageB)
-	if DB.Model(&user).Association("Languages").Count() != 1 {
+	if len(user.Languages) != 1 || DB.Model(&user).Association("Languages").Count() != 1 {
 		t.Errorf("Relations should be replaced")
 	}
 
 	DB.Model(&user).Association("Languages").Replace(&[]Language{{Name: "FF"}, {Name: "JJ"}})
-	if DB.Model(&user).Association("Languages").Count() != len([]string{"FF", "JJ"}) {
+	if len(user.Languages) != 2 || DB.Model(&user).Association("Languages").Count() != len([]string{"FF", "JJ"}) {
 		t.Errorf("Relations should be replaced")
 	}
 
 	// Clear
 	DB.Model(&user).Association("Languages").Clear()
-	if DB.Model(&user).Association("Languages").Count() != 0 {
+	if len(user.Languages) != 0 || DB.Model(&user).Association("Languages").Count() != 0 {
 		t.Errorf("Relations should be cleared")
 	}
 }
 
-func TestPolymorphic(t *testing.T) {
-	DB.DropTableIfExists(Cat{})
-	DB.DropTableIfExists(Dog{})
-	DB.DropTableIfExists(Toy{})
-
-	DB.AutoMigrate(&Cat{})
-	DB.AutoMigrate(&Dog{})
-	DB.AutoMigrate(&Toy{})
-
-	cat := Cat{Name: "Mr. Bigglesworth", Toy: Toy{Name: "cat nip"}}
-	dog := Dog{Name: "Pluto", Toys: []Toy{Toy{Name: "orange ball"}, Toy{Name: "yellow ball"}}}
-	DB.Save(&cat).Save(&dog)
-
-	var catToys []Toy
-	if err := DB.Model(&cat).Related(&catToys, "Toy").Error; err == gorm.RecordNotFound {
-		t.Errorf("Did not find any has one polymorphic association")
-	} else if len(catToys) != 1 {
-		t.Errorf("Should have found only one polymorphic has one association")
-	} else if catToys[0].Name != cat.Toy.Name {
-		t.Errorf("Should have found the proper has one polymorphic association")
+func TestForeignKey(t *testing.T) {
+	for _, structField := range DB.NewScope(&User{}).GetStructFields() {
+		for _, foreignKey := range []string{"BillingAddressID", "ShippingAddressId", "CompanyID"} {
+			if structField.Name == foreignKey && !structField.IsForeignKey {
+				t.Errorf(fmt.Sprintf("%v should be foreign key", foreignKey))
+			}
+		}
 	}
 
-	var dogToys []Toy
-	if err := DB.Model(&dog).Related(&dogToys, "Toys").Error; err == gorm.RecordNotFound {
-		t.Errorf("Did not find any polymorphic has many associations")
-	} else if len(dogToys) != len(dog.Toys) {
-		t.Errorf("Should have found all polymorphic has many associations")
+	for _, structField := range DB.NewScope(&Email{}).GetStructFields() {
+		for _, foreignKey := range []string{"UserId"} {
+			if structField.Name == foreignKey && !structField.IsForeignKey {
+				t.Errorf(fmt.Sprintf("%v should be foreign key", foreignKey))
+			}
+		}
 	}
 
-	if DB.Model(&cat).Association("Toy").Count() != 1 {
-		t.Errorf("Should return one polymorphic has one association")
+	for _, structField := range DB.NewScope(&Post{}).GetStructFields() {
+		for _, foreignKey := range []string{"CategoryId", "MainCategoryId"} {
+			if structField.Name == foreignKey && !structField.IsForeignKey {
+				t.Errorf(fmt.Sprintf("%v should be foreign key", foreignKey))
+			}
+		}
 	}
 
-	if DB.Model(&dog).Association("Toys").Count() != 2 {
-		t.Errorf("Should return two polymorphic has many associations")
-	}
-
-	if DB.Model(&Toy{OwnerId: dog.Id, OwnerType: "dog"}).Related(&dog, "Owner").Error == nil {
-		t.Errorf("Should have thrown unsupported belongs_to error")
+	for _, structField := range DB.NewScope(&Comment{}).GetStructFields() {
+		for _, foreignKey := range []string{"PostId"} {
+			if structField.Name == foreignKey && !structField.IsForeignKey {
+				t.Errorf(fmt.Sprintf("%v should be foreign key", foreignKey))
+			}
+		}
 	}
 }

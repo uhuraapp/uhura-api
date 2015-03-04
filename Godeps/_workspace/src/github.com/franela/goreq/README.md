@@ -17,6 +17,7 @@ Simple and sane HTTP request library for Go language.
   - [POST](#user-content-post)
     - [Sending payloads in the Body](#user-content-sending-payloads-in-the-body)
   - [Specifiying request headers](#user-content-specifiying-request-headers)
+  - [Sending Cookies](#cookie-support)
   - [Setting timeouts](#user-content-setting-timeouts)
  - [Using the Response and Error](#user-content-using-the-response-and-error)
  - [Receiving JSON](#user-content-receiving-json)
@@ -25,6 +26,7 @@ Simple and sane HTTP request library for Go language.
     - [Using deflate compression:](#user-content-using-deflate-compression)
     - [Using compressed responses:](#user-content-using-compressed-responses)
  - [Proxy](#proxy)
+ - [Debugging requests](#debug)
  - [TODO:](#user-content-todo)
 
 
@@ -145,6 +147,25 @@ req.AddHeader("X-Custom", "somevalue")
 req.Do()
 ```
 
+Alternatively you can use the `WithHeader` function to keep the syntax short
+
+```go
+res, err = Request{ Uri: "http://www.google.com" }.WithHeader("X-Custom", "somevalue").Do()
+```
+
+## Cookie support
+
+Cookies can be either set at the request level by sending a [CookieJar](http://golang.org/pkg/net/http/cookiejar/) in the `CookieJar` request field
+or you can use goreq's one-liner WithCookie method as shown below
+
+```go
+res, err := Request{
+    Uri: "http://www.google.com",
+}.
+WithCookie("Name", "Value").
+Do()
+```
+
 ## Setting timeouts
 
 GoReq supports 2 kind of timeouts. A general connection timeout and a request specific one. By default the connection timeout is of 1 second. There is no default for request timeout, which means it will wait forever.
@@ -187,7 +208,8 @@ return err
 If you don't get an error, you can safely use the ```Response```.
 
 ```go
-res.StatusCode //return the status code of the response
+res.Uri // return final URL location of the response (fulfilled after redirect was made)
+res.StatusCode // return the status code of the response
 res.Body // gives you access to the body
 res.Body.ToString() // will return the body as a string
 res.Header.Get("Content-Type") // gives you access to all the response headers
@@ -276,6 +298,29 @@ res, err := goreq.Request{
     Proxy: "http://user:pass@myproxy:myproxyport",
     Uri: "http://www.google.com",
 }.Do()
+```
+
+## Debug
+If you need to debug your http requests, it can print the http request detail.
+
+```go
+res, err := goreq.Request{
+	Method:      "GET",
+	Uri:         "http://www.google.com",
+	Compression: goreq.Gzip(),
+	ShowDebug:   true,
+}.Do()
+fmt.Println(res, err)
+```
+
+and it will print the log:
+```
+GET / HTTP/1.1
+Host: www.google.com
+Accept:
+Accept-Encoding: gzip
+Content-Encoding: gzip
+Content-Type:
 ```
 
 TODO:

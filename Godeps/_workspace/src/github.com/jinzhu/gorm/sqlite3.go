@@ -3,6 +3,7 @@ package gorm
 import (
 	"fmt"
 	"reflect"
+	"time"
 )
 
 type sqlite3 struct{}
@@ -32,11 +33,10 @@ func (s *sqlite3) SqlTag(value reflect.Value, size int) string {
 	case reflect.String:
 		if size > 0 && size < 65532 {
 			return fmt.Sprintf("varchar(%d)", size)
-		} else {
-			return "text"
 		}
+		return "text"
 	case reflect.Struct:
-		if value.Type() == timeType {
+		if _, ok := value.Interface().(time.Time); ok {
 			return "datetime"
 		}
 	default:
@@ -70,16 +70,16 @@ func (s *sqlite3) Quote(key string) string {
 
 func (s *sqlite3) HasTable(scope *Scope, tableName string) bool {
 	var count int
-	scope.DB().QueryRow(fmt.Sprintf("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='%v';", tableName)).Scan(&count)
+	scope.NewDB().Raw("SELECT count(*) FROM sqlite_master WHERE type='table' AND name=?", tableName).Row().Scan(&count)
 	return count > 0
 }
 
 func (s *sqlite3) HasColumn(scope *Scope, tableName string, columnName string) bool {
 	var count int
-	scope.DB().QueryRow(fmt.Sprintf("SELECT count(*) FROM sqlite_master WHERE tbl_name = '%v' AND (sql LIKE '%%(\"%v\" %%' OR sql LIKE '%%,\"%v\" %%' OR sql LIKE '%%( %v %%' OR sql LIKE '%%, %v %%');\n", tableName, columnName, columnName, columnName, columnName)).Scan(&count)
+	scope.NewDB().Raw(fmt.Sprintf("SELECT count(*) FROM sqlite_master WHERE tbl_name = ? AND (sql LIKE '%%(\"%v\" %%' OR sql LIKE '%%,\"%v\" %%' OR sql LIKE '%%( %v %%' OR sql LIKE '%%, %v %%');\n", columnName, columnName, columnName, columnName), tableName).Row().Scan(&count)
 	return count > 0
 }
 
 func (s *sqlite3) RemoveIndex(scope *Scope, indexName string) {
-	scope.Raw(fmt.Sprintf("DROP INDEX %v", indexName)).Exec()
+	scope.NewDB().Exec(fmt.Sprintf("DROP INDEX %v", indexName))
 }

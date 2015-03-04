@@ -58,8 +58,11 @@ code still exists in here.
 * Charlie Melbye (cmelbye)
 * Chris Bandy (cbandy)
 * Chris Walsh (cwds)
+* Dan Sosedoff (sosedoff)
 * Daniel Farina (fdr)
 * Eric Chlebek (echlebek)
+* Eric Garrido (minusnine)
+* Eric Urban (hydrogen18)
 * Everyone at The Go Team
 * Evan Shaw (edsrzf)
 * Ewan Chou (coocood)
@@ -93,4 +96,6 @@ code still exists in here.
 * Ryan Smith (ryandotsmith)
 * Samuel Stauffer (samuel)
 * Timothée Peignier (cyberdelia)
+* Travis Cline (tmc)
+* TruongSinh Tran-Nguyen (truongsinh)
 * notedit (notedit)

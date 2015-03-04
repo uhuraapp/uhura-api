@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 )
 
 type mysql struct{}
@@ -20,7 +21,7 @@ func (s *mysql) HasTop() bool {
 	return false
 }
 
-func (d *mysql) SqlTag(value reflect.Value, size int) string {
+func (s *mysql) SqlTag(value reflect.Value, size int) string {
 	switch value.Kind() {
 	case reflect.Bool:
 		return "boolean"
@@ -33,32 +34,30 @@ func (d *mysql) SqlTag(value reflect.Value, size int) string {
 	case reflect.String:
 		if size > 0 && size < 65532 {
 			return fmt.Sprintf("varchar(%d)", size)
-		} else {
-			return "longtext"
 		}
+		return "longtext"
 	case reflect.Struct:
-		if value.Type() == timeType {
-			return "datetime"
+		if _, ok := value.Interface().(time.Time); ok {
+			return "timestamp NULL"
 		}
 	default:
 		if _, ok := value.Interface().([]byte); ok {
 			if size > 0 && size < 65532 {
 				return fmt.Sprintf("varbinary(%d)", size)
-			} else {
-				return "longblob"
 			}
+			return "longblob"
 		}
 	}
 	panic(fmt.Sprintf("invalid sql type %s (%s) for mysql", value.Type().Name(), value.Kind().String()))
 }
 
 func (s *mysql) PrimaryKeyTag(value reflect.Value, size int) string {
-	suffix_str := " NOT NULL AUTO_INCREMENT PRIMARY KEY"
+	suffix := " NOT NULL AUTO_INCREMENT PRIMARY KEY"
 	switch value.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uintptr:
-		return "int" + suffix_str
+		return "int" + suffix
 	case reflect.Int64, reflect.Uint64:
-		return "bigint" + suffix_str
+		return "bigint" + suffix
 	default:
 		panic("Invalid primary key type")
 	}
@@ -87,26 +86,16 @@ func (s *mysql) databaseName(scope *Scope) string {
 
 func (s *mysql) HasTable(scope *Scope, tableName string) bool {
 	var count int
-	newScope := scope.New(nil)
-	newScope.Raw(fmt.Sprintf("SELECT count(*) FROM INFORMATION_SCHEMA.tables where table_name = %v AND table_schema = %v",
-		newScope.AddToVars(tableName),
-		newScope.AddToVars(s.databaseName(scope))))
-	newScope.DB().QueryRow(newScope.Sql, newScope.SqlVars...).Scan(&count)
+	scope.NewDB().Raw("SELECT count(*) FROM INFORMATION_SCHEMA.tables where table_name = ? AND table_schema = ?", tableName, s.databaseName(scope)).Row().Scan(&count)
 	return count > 0
 }
 
 func (s *mysql) HasColumn(scope *Scope, tableName string, columnName string) bool {
 	var count int
-	newScope := scope.New(nil)
-	newScope.Raw(fmt.Sprintf("SELECT count(*) FROM information_schema.columns WHERE table_schema = %v AND table_name = %v AND column_name = %v",
-		newScope.AddToVars(s.databaseName(scope)),
-		newScope.AddToVars(tableName),
-		newScope.AddToVars(columnName),
-	))
-	newScope.DB().QueryRow(newScope.Sql, newScope.SqlVars...).Scan(&count)
+	scope.NewDB().Raw("SELECT count(*) FROM information_schema.columns WHERE table_schema = ? AND table_name = ? AND column_name = ?", s.databaseName(scope), tableName, columnName).Row().Scan(&count)
 	return count > 0
 }
 
 func (s *mysql) RemoveIndex(scope *Scope, indexName string) {
-	scope.Raw(fmt.Sprintf("DROP INDEX %v ON %v", indexName, scope.QuotedTableName())).Exec()
+	scope.NewDB().Exec(fmt.Sprintf("DROP INDEX %v ON %v", indexName, scope.QuotedTableName()))
 }

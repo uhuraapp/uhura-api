@@ -12,8 +12,10 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"reflect"
 	"strings"
@@ -22,6 +24,7 @@ import (
 
 type Request struct {
 	headers           []headerTuple
+	cookies           []*http.Cookie
 	Method            string
 	Uri               string
 	Body              interface{}
@@ -38,6 +41,8 @@ type Request struct {
 	Compression       *compression
 	BasicAuthUsername string
 	BasicAuthPassword string
+	CookieJar         http.CookieJar
+	ShowDebug         bool
 }
 
 type compression struct {
@@ -47,6 +52,7 @@ type compression struct {
 }
 
 type Response struct {
+	Uri           string
 	StatusCode    int
 	ContentLength int64
 	Body          *Body
@@ -140,20 +146,32 @@ func Zlib() *compression {
 }
 
 func paramParse(query interface{}) (string, error) {
-	var (
-		v = &url.Values{}
-		s = reflect.ValueOf(query)
-		t = reflect.TypeOf(query)
-	)
-
 	switch query.(type) {
 	case url.Values:
 		return query.(url.Values).Encode(), nil
+	case *url.Values:
+		return query.(*url.Values).Encode(), nil
 	default:
-		for i := 0; i < s.NumField(); i++ {
-			v.Add(strings.ToLower(t.Field(i).Name), fmt.Sprintf("%v", s.Field(i).Interface()))
+		var (
+			v = &url.Values{}
+			s = reflect.ValueOf(query)
+			t = reflect.TypeOf(query)
+		)
+		for t.Kind() == reflect.Ptr || t.Kind() == reflect.Interface {
+			s = s.Elem()
+			t = s.Type()
 		}
-		return v.Encode(), nil
+		if t.Kind() == reflect.Struct {
+			for i := 0; i < t.NumField(); i++ {
+				if !s.Field(i).CanInterface() {
+					continue
+				}
+				v.Add(strings.ToLower(t.Field(i).Name), fmt.Sprintf("%v", s.Field(i).Interface()))
+			}
+			return v.Encode(), nil
+		} else {
+			return "", errors.New("Can not parse QueryString.")
+		}
 	}
 }
 
@@ -198,14 +216,38 @@ func (r *Request) AddHeader(name string, value string) {
 	r.headers = append(r.headers, headerTuple{name: name, value: value})
 }
 
+func (r Request) WithHeader(name string, value string) Request {
+	r.AddHeader(name, value)
+	return r
+}
+
+func (r *Request) AddCookie(c *http.Cookie) {
+	r.cookies = append(r.cookies, c)
+}
+
+func (r Request) WithCookie(c *http.Cookie) Request {
+	r.AddCookie(c)
+	return r
+}
+
 func (r Request) Do() (*Response, error) {
 	var req *http.Request
 	var er error
 	var transport = defaultTransport
 	var client = defaultClient
+	var resUri string
 	var redirectFailed bool
 
 	r.Method = valueOrDefault(r.Method, "GET")
+
+	// use a client with a cookie jar if necessary. We create a new client not
+	// to modify the default one.
+	if r.CookieJar != nil {
+		client = &http.Client{
+			Transport: transport,
+			Jar:       r.CookieJar,
+		}
+	}
 
 	if r.Proxy != "" {
 		proxyUrl, err := url.Parse(r.Proxy)
@@ -224,10 +266,13 @@ func (r Request) Do() (*Response, error) {
 	}
 
 	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+
 		if len(via) > r.MaxRedirects {
 			redirectFailed = true
 			return errors.New("Error redirecting. MaxRedirects reached")
 		}
+
+		resUri = req.URL.String()
 
 		//By default Golang will not redirect request headers
 		// https://code.google.com/p/go/issues/detail?id=4800&q=request%20header
@@ -287,9 +332,8 @@ func (r Request) Do() (*Response, error) {
 
 	// add headers to the request
 	req.Host = r.Host
-	req.Header.Add("User-Agent", r.UserAgent)
-	req.Header.Add("Content-Type", r.ContentType)
-	req.Header.Add("Accept", r.Accept)
+
+	r.addHeaders(req.Header)
 	if r.Compression != nil {
 		req.Header.Add("Content-Encoding", r.Compression.ContentEncoding)
 		req.Header.Add("Accept-Encoding", r.Compression.ContentEncoding)
@@ -305,6 +349,10 @@ func (r Request) Do() (*Response, error) {
 		req.SetBasicAuth(r.BasicAuthUsername, r.BasicAuthPassword)
 	}
 
+	for _, c := range r.cookies {
+		req.AddCookie(c)
+	}
+
 	timeout := false
 	var timer *time.Timer
 	if r.Timeout > 0 {
@@ -312,6 +360,14 @@ func (r Request) Do() (*Response, error) {
 			transport.CancelRequest(req)
 			timeout = true
 		})
+	}
+
+	if r.ShowDebug {
+		dump, err := httputil.DumpRequest(req, true)
+		if err != nil {
+			log.Println(err)
+		}
+		log.Println(string(dump))
 	}
 
 	res, err := client.Do(req)
@@ -334,7 +390,12 @@ func (r Request) Do() (*Response, error) {
 		var response *Response
 		//If redirect fails we still want to return response data
 		if redirectFailed {
-			response = &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body}}
+			response = &Response{Uri: resUri, StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body}}
+		}
+
+		//If redirect fails and we haven't set a redirect count we shouldn't return an error
+		if redirectFailed && r.MaxRedirects == 0 {
+			return response, nil
 		}
 
 		return response, &Error{timeout: timeout, Err: err}
@@ -345,10 +406,18 @@ func (r Request) Do() (*Response, error) {
 		if err != nil {
 			return nil, &Error{Err: err}
 		}
-		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body, compressedReader: compressedReader}}, nil
+		return &Response{Uri: resUri, StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body, compressedReader: compressedReader}}, nil
 	} else {
-		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body}}, nil
+		return &Response{Uri: resUri, StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body}}, nil
 	}
+}
+
+func (r Request) addHeaders(headersMap http.Header) {
+	if len(r.UserAgent) > 0 {
+		headersMap.Add("User-Agent", r.UserAgent)
+	}
+	headersMap.Add("Accept", r.Accept)
+	headersMap.Add("Content-Type", r.ContentType)
 }
 
 // Return value if nonempty, def otherwise.

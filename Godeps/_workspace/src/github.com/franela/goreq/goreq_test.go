@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"math"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
 	"strings"
@@ -89,6 +90,19 @@ func TestRequest(t *testing.T) {
 					}
 					if r.Method == "GET" && r.URL.Path == "/redirect_test/307" {
 						http.Redirect(w, r, "/getquery", 307)
+					}
+					if r.Method == "GET" && r.URL.Path == "/redirect_test/destination" {
+						http.Redirect(w, r, ts.URL+"/destination", 301)
+					}
+					if r.Method == "GET" && r.URL.Path == "/getcookies" {
+						defer r.Body.Close()
+						w.WriteHeader(200)
+						fmt.Fprint(w, requestHeaders.Get("Cookie"))
+					}
+					if r.Method == "GET" && r.URL.Path == "/setcookies" {
+						defer r.Body.Close()
+						w.Header().Add("Set-Cookie", "foobar=42 ; Path=/")
+						w.WriteHeader(200)
 					}
 					if r.Method == "GET" && r.URL.Path == "/compressed" {
 						defer r.Body.Close()
@@ -370,6 +384,89 @@ func TestRequest(t *testing.T) {
 					Expect(string(b)).ShouldNot(Equal("{\"foo\":\"bar\",\"fuu\":\"baz\"}"))
 				})
 
+				g.It("Should send cookies from the cookiejar", func() {
+					uri, err := url.Parse(ts.URL + "/getcookies")
+					Expect(err).Should(BeNil())
+
+					jar, err := cookiejar.New(nil)
+					Expect(err).Should(BeNil())
+
+					jar.SetCookies(uri, []*http.Cookie{
+						&http.Cookie{
+							Name:  "bar",
+							Value: "foo",
+							Path:  "/",
+						},
+					})
+
+					res, err := Request{
+						Uri:       ts.URL + "/getcookies",
+						CookieJar: jar,
+					}.Do()
+
+					Expect(err).Should(BeNil())
+					str, _ := res.Body.ToString()
+					Expect(str).Should(Equal("bar=foo"))
+					Expect(res.StatusCode).Should(Equal(200))
+					Expect(res.ContentLength).Should(Equal(int64(7)))
+				})
+
+				g.It("Should send cookies added with .AddCookie", func() {
+					c1 := &http.Cookie{Name: "c1", Value: "v1"}
+					c2 := &http.Cookie{Name: "c2", Value: "v2"}
+
+					req := Request{Uri: ts.URL + "/getcookies"}
+					req.AddCookie(c1)
+					req.AddCookie(c2)
+
+					res, err := req.Do()
+					Expect(err).Should(BeNil())
+					str, _ := res.Body.ToString()
+					Expect(str).Should(Equal("c1=v1; c2=v2"))
+					Expect(res.StatusCode).Should(Equal(200))
+					Expect(res.ContentLength).Should(Equal(int64(12)))
+				})
+
+				g.It("Should send cookies added with .WithCookie", func() {
+					c1 := &http.Cookie{Name: "c1", Value: "v2"}
+					c2 := &http.Cookie{Name: "c2", Value: "v3"}
+
+					res, err := Request{Uri: ts.URL + "/getcookies"}.
+						WithCookie(c1).
+						WithCookie(c2).
+						Do()
+					Expect(err).Should(BeNil())
+					str, _ := res.Body.ToString()
+					Expect(str).Should(Equal("c1=v2; c2=v3"))
+					Expect(res.StatusCode).Should(Equal(200))
+					Expect(res.ContentLength).Should(Equal(int64(12)))
+				})
+
+				g.It("Should populate the cookiejar", func() {
+					uri, err := url.Parse(ts.URL + "/setcookies")
+					Expect(err).Should(BeNil())
+
+					jar, _ := cookiejar.New(nil)
+					Expect(err).Should(BeNil())
+
+					res, err := Request{
+						Uri:       ts.URL + "/setcookies",
+						CookieJar: jar,
+					}.Do()
+
+					Expect(err).Should(BeNil())
+
+					Expect(res.Header.Get("Set-Cookie")).Should(Equal("foobar=42 ; Path=/"))
+
+					cookies := jar.Cookies(uri)
+					Expect(len(cookies)).Should(Equal(1))
+
+					cookie := cookies[0]
+					Expect(*cookie).Should(Equal(http.Cookie{
+						Name:  "foobar",
+						Value: "42",
+					}))
+				})
 			})
 
 			g.Describe("POST", func() {
@@ -619,6 +716,16 @@ func TestRequest(t *testing.T) {
 						Uri:    ts.URL + "/redirect_test/301",
 					}.Do()
 					Expect(res.StatusCode).Should(Equal(301))
+					Expect(err).ShouldNot(HaveOccurred())
+				})
+
+				g.It("Should throw an error if MaxRedirect limit is exceeded", func() {
+					res, err := Request{
+						Method:       "GET",
+						MaxRedirects: 1,
+						Uri:          ts.URL + "/redirect_test/301",
+					}.Do()
+					Expect(res.StatusCode).Should(Equal(302))
 					Expect(err).Should(HaveOccurred())
 				})
 
@@ -656,6 +763,14 @@ func TestRequest(t *testing.T) {
 						MaxRedirects: 4,
 					}.Do()
 					Expect(res.StatusCode).Should(Equal(200))
+				})
+
+				g.It("Should return final URL of the response when redirecting", func() {
+					res, _ := Request{
+						Uri:          ts.URL + "/redirect_test/destination",
+						MaxRedirects: 2,
+					}.Do()
+					Expect(res.Uri).Should(Equal(ts.URL + "/destination"))
 				})
 			})
 		})
@@ -738,6 +853,7 @@ func TestRequest(t *testing.T) {
 					Expect(r.Header.Get("Accept")).Should(Equal("application/json"))
 					Expect(r.Header.Get("Content-Type")).Should(Equal("application/json"))
 					Expect(r.Header.Get("X-Custom")).Should(Equal("foobar"))
+					Expect(r.Header.Get("X-Custom2")).Should(Equal("barfoo"))
 
 					w.WriteHeader(200)
 				}))
@@ -745,6 +861,21 @@ func TestRequest(t *testing.T) {
 
 				req := Request{Uri: ts.URL, Accept: "application/json", ContentType: "application/json", UserAgent: "foobaragent", Host: "foobar.com"}
 				req.AddHeader("X-Custom", "foobar")
+				res, _ := req.WithHeader("X-Custom2", "barfoo").Do()
+
+				Expect(res.StatusCode).Should(Equal(200))
+			})
+
+			g.It("Should set default golang user agent when not explicitly passed", func() {
+				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.Header.Get("User-Agent")).Should(Equal("Go 1.1 package http"))
+					Expect(r.Host).Should(Equal("foobar.com"))
+
+					w.WriteHeader(200)
+				}))
+				defer ts.Close()
+
+				req := Request{Uri: ts.URL, Host: "foobar.com"}
 				res, _ := req.Do()
 
 				Expect(res.StatusCode).Should(Equal(200))
@@ -849,7 +980,7 @@ func TestRequest(t *testing.T) {
 
 			g.It("Should not redirect if MaxRedirects is not set", func() {
 				res, err := Request{Uri: ts.URL + "/redirect_test/301", Proxy: ts.URL}.Do()
-				Expect(err).Should(HaveOccurred())
+				Expect(err).ShouldNot(HaveOccurred())
 				Expect(res.StatusCode).Should(Equal(301))
 			})
 
@@ -913,4 +1044,60 @@ func TestRequest(t *testing.T) {
 			})
 		})
 	})
+}
+
+func Test_paramParse(t *testing.T) {
+	type Form struct {
+		A string
+		B string
+		c string
+	}
+	g := Goblin(t)
+	RegisterFailHandler(func(m string, _ ...int) { g.Fail(m) })
+	var form = Form{}
+	var values = url.Values{}
+	const result = "a=1&b=2"
+	g.Describe("QueryString ParamParse", func() {
+		g.Before(func() {
+			form.A = "1"
+			form.B = "2"
+			form.c = "3"
+			values.Add("a", "1")
+			values.Add("b", "2")
+		})
+		g.It("Should accept struct and ignores unexported field", func() {
+			str, err := paramParse(form)
+			Expect(err).Should(BeNil())
+			Expect(str).Should(Equal(result))
+		})
+		g.It("Should accept pointer of struct", func() {
+			str, err := paramParse(&form)
+			Expect(err).Should(BeNil())
+			Expect(str).Should(Equal(result))
+		})
+		g.It("Should accept recursive pointer of struct", func() {
+			f := &form
+			ff := &f
+			str, err := paramParse(ff)
+			Expect(err).Should(BeNil())
+			Expect(str).Should(Equal(result))
+		})
+		g.It("Should accept interface{} which forcely converted by struct", func() {
+			str, err := paramParse(interface{}(&form))
+			Expect(err).Should(BeNil())
+			Expect(str).Should(Equal(result))
+		})
+
+		g.It("Should accept url.Values", func() {
+			str, err := paramParse(values)
+			Expect(err).Should(BeNil())
+			Expect(str).Should(Equal(result))
+		})
+		g.It("Should accept &url.Values", func() {
+			str, err := paramParse(values)
+			Expect(err).Should(BeNil())
+			Expect(str).Should(Equal(result))
+		})
+	})
+
 }
