@@ -56,6 +56,20 @@ func (s EpisodeService) Listened(c *gin.Context) {
 	}).FirstOrCreate(&models.Listened{})
 }
 
+func (s EpisodeService) Unlistened(c *gin.Context) {
+	var episode models.Episode
+	episodeId, _ := strconv.Atoi(c.Params.ByName("id"))
+	_userId, _ := c.Get("user_id")
+	userId, _ := strconv.Atoi(_userId.(string))
+
+	s.DB.Table(models.Episode{}.TableName()).Where("id = ?", episodeId).First(&episode)
+	s.DB.Table(models.Listened{}.TableName()).Where(&models.Listened{
+		UserId:    int64(userId),
+		ItemId:    int64(episodeId),
+		ChannelId: episode.ChannelId,
+	}).Delete(&models.Listened{})
+}
+
 func (s EpisodeService) Download(c *gin.Context) {
 	var episode models.Episode
 	episodeId, _ := strconv.Atoi(c.Params.ByName("id"))
