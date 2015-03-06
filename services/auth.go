@@ -1,8 +1,10 @@
 package services
 
 import (
-	"os"
+	"crypto/md5"
+	"encoding/hex"
 	"strconv"
+	"time"
 
 	"bitbucket.org/dukex/uhura-api/entities"
 	"bitbucket.org/dukex/uhura-api/models"
@@ -45,10 +47,14 @@ func (s AuthService) GetUser(c *gin.Context) {
 	userId, _ := auth.CurrentUser(c.Request)
 	s.DB.Table(models.User{}.TableName()).Where("id = ?", userId).First(&user)
 
-	if user.ApiToken == "" || os.Getenv("RESET_TOKEN") == "true" {
+	if user.ApiToken == "" {
 		token := login.NewUserToken()
-		s.DB.Model(&user).Update("api_token", token)
+		hasher := md5.New()
+		hasher.Write([]byte(token + user.Email))
+		s.DB.Model(&user).Update("api_token", hex.EncodeToString(hasher.Sum(nil)))
 	}
+
+	s.DB.Model(&user).Update("last_visited_at", time.Now().Format(time.RubyDate))
 
 	c.JSON(200, user)
 }

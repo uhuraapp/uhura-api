@@ -25,6 +25,7 @@ type User struct {
 	ProviderId    string `sql:"type:varchar(50);"`
 	RememberToken string `sql:"type:varchar(100);unique"`
 	ApiToken      string `sql:"type:varchar(100);unique"`
+	LastVisitedAt time.Time
 }
 
 func (self User) TableName() string {
