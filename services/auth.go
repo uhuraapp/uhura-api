@@ -51,10 +51,10 @@ func (s AuthService) GetUser(c *gin.Context) {
 		token := login.NewUserToken()
 		hasher := md5.New()
 		hasher.Write([]byte(token + user.Email))
-		s.DB.Model(&user).Update("api_token", hex.EncodeToString(hasher.Sum(nil)))
+		s.DB.Table(models.User{}.TableName()).Where("id = ?", userId).Update("api_token", hex.EncodeToString(hasher.Sum(nil)))
 	}
 
-	s.DB.Model(&user).Update("last_visited_at", time.Now().Format(time.RubyDate))
+	s.DB.Table(models.User{}.TableName()).Where("id = ?", userId).Update("last_visited_at", time.Now().Format(time.RubyDate))
 
 	c.JSON(200, user)
 }
