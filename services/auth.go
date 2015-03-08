@@ -45,7 +45,11 @@ func (s AuthService) GetUser(c *gin.Context) {
 	auth, _ := s.getAuth(c)
 
 	userId, _ := auth.CurrentUser(c.Request)
-	s.DB.Table(models.User{}.TableName()).Where("id = ?", userId).First(&user)
+	err := s.DB.Table(models.User{}.TableName()).Where("id = ?", userId).First(&user).Error
+	if err != nil {
+		c.AbortWithStatus(404)
+		return
+	}
 
 	if user.ApiToken == "" {
 		token := login.NewUserToken()
