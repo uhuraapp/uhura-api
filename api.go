@@ -26,7 +26,7 @@ func main() {
 }
 
 func Mount(_r *gin.RouterGroup) {
-	DB := database.New()
+	DB := database.NewPostgresql()
 
 	userSubscriptions := services.NewUserSubscriptionService(DB)
 	subscriptions := services.NewSubscriptionService(DB)

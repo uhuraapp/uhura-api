@@ -9,7 +9,7 @@ import (
 	pq "github.com/lib/pq"
 )
 
-func New() gorm.DB {
+func NewPostgresql() gorm.DB {
 	var database gorm.DB
 	var err error
 
