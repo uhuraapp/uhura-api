@@ -1,6 +1,7 @@
 package services
 
 import (
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
@@ -75,5 +76,20 @@ func (s EpisodeService) Download(c *gin.Context) {
 	episodeId, _ := strconv.Atoi(c.Params.ByName("id"))
 
 	s.DB.Table(models.Episode{}.TableName()).Where("id = ?", episodeId).First(&episode)
-	c.Redirect(http.StatusMovedPermanently, episode.SourceUrl)
+
+	response, err := http.Get(episode.SourceUrl)
+	if err != nil {
+		c.AbortWithStatus(500)
+		return
+	}
+
+	defer response.Body.Close()
+	body, err := ioutil.ReadAll(response.Body)
+
+	if err != nil {
+		c.AbortWithStatus(500)
+		return
+	}
+
+	c.Data(200, response.Header.Get("Content-Type"), body)
 }
