@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bitbucket.org/dukex/uhura-api/entities"
+	"bitbucket.org/dukex/uhura-api/helpers"
 	"bitbucket.org/dukex/uhura-api/models"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
@@ -21,7 +22,17 @@ func NewEpisodesService(db gorm.DB) EpisodeService {
 }
 
 func (s EpisodeService) GetPaged(c *gin.Context) {
-	var episodes []*entities.Episode
+	var (
+		episodes  []*entities.Episode
+		ids       []int64
+		listeneds []int64
+		userId    string
+	)
+
+	_userId, err := c.Get("user_id")
+	if err == nil {
+		userId = _userId.(string)
+	}
 
 	params := c.Request.URL.Query()
 
@@ -31,10 +42,18 @@ func (s EpisodeService) GetPaged(c *gin.Context) {
 		Where("published_at < ?", params.Get("since")).
 		Order("published_at DESC").
 		Limit(params.Get("per_page")).
-		Find(&episodes)
+		Find(&episodes).
+		Pluck("id", &ids)
+
+	s.DB.Table(models.Listened{}.TableName()).
+		Where("item_id IN (?)", ids).
+		Where("viewed = true").
+		Where("user_id = ?", userId).
+		Pluck("item_id", &listeneds)
 
 	for _, episode := range episodes {
 		episode.ChannelUri = params.Get("channel_id")
+		episode.Listened = helpers.Contains(listeneds, episode.Id)
 	}
 
 	c.JSON(200, map[string]interface{}{"episodes": episodes})
