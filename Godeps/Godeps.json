@@ -21,6 +21,10 @@
 			"Rev": "c49bc1d83e290816d616dd198d7104aca4dfc718"
 		},
 		{
+			"ImportPath": "github.com/dukex/mixpanel",
+			"Rev": "353602d3c3d2779e4b1d73c6d86f33eee018cf4e"
+		},
+		{
 			"ImportPath": "github.com/fiam/gounidecode/unidecode",
 			"Rev": "311ebb7422d3ff70cc1d064c5a297520ff5f304a"
 		},
