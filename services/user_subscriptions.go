@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"bitbucket.org/dukex/uhura-api/entities"
+	"bitbucket.org/dukex/uhura-api/helpers"
 	"bitbucket.org/dukex/uhura-api/models"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
@@ -73,6 +74,7 @@ func (s UserSubscriptionService) Delete(c *gin.Context) {
 
 		channel.Subscribed = false
 
+		go helpers.NewEvent(_userId.(string), "unsubscribed", map[string]interface{}{"channel_id": channel.Id})
 		c.JSON(200, gin.H{"subscription": channel})
 	}
 
@@ -108,6 +110,8 @@ func (s UserSubscriptionService) Create(c *gin.Context) {
 		s.DB.Table(models.Subscription{}.TableName()).Where("user_id = ?", userId).
 			Where("channel_id = ?", channel.Id).FirstOrCreate(&subscription)
 		channel.Subscribed = true
+
+		go helpers.NewEvent(_userId.(string), "subscribed", map[string]interface{}{"channel_id": channel.Id})
 		c.JSON(200, gin.H{"subscription": channel})
 	} else {
 		c.AbortWithStatus(404)

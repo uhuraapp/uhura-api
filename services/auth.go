@@ -36,7 +36,7 @@ func (s AuthService) ByProviderCallback(c *gin.Context) {
 		userIdint := strconv.FormatInt(userID, 10)
 		session := auth.Login(c.Request, userIdint)
 		session.Save(c.Request, c.Writer)
-		go helpers.NewEvent(userIdint, "login")
+		go helpers.NewEvent(userIdint, "login", map[string]interface{}{})
 	}
 
 	closeHTML := []byte("<html><head></head><body>Loading....<script>window.close()</script></body></html>")
@@ -78,7 +78,7 @@ func (s AuthService) Logout(c *gin.Context) {
 	auth, _ := s.getAuth(c)
 	userId, _ := auth.CurrentUser(c.Request)
 
-	go helpers.NewEvent(userId, "logout")
+	go helpers.NewEvent(userId, "logout", map[string]interface{}{})
 	session := auth.Logout(c.Request)
 	session.Save(c.Request, c.Writer)
 

@@ -74,6 +74,8 @@ func (s EpisodeService) Listened(c *gin.Context) {
 		ItemId:    int64(episodeId),
 		ChannelId: episode.ChannelId,
 	}).FirstOrCreate(&models.Listened{})
+
+	go helpers.NewEvent(_userId.(string), "listened", map[string]interface{}{"episode_id": episode.Id, "channel_id": episode.ChannelId})
 }
 
 func (s EpisodeService) Unlistened(c *gin.Context) {
@@ -88,6 +90,8 @@ func (s EpisodeService) Unlistened(c *gin.Context) {
 		ItemId:    int64(episodeId),
 		ChannelId: episode.ChannelId,
 	}).Delete(&models.Listened{})
+
+	go helpers.NewEvent(_userId.(string), "unlistened", map[string]interface{}{"episode_id": episode.Id, "channel_id": episode.ChannelId})
 }
 
 func (s EpisodeService) Download(c *gin.Context) {

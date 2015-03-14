@@ -18,7 +18,7 @@ func MixpanelPerson(userId string) *mixpanel.People {
 	return clientMixpanel.Identify(userId)
 }
 
-func NewEvent(userId string, trackName string) {
+func NewEvent(userId string, trackName string, data map[string]interface{}) {
 	person := clientMixpanel.Identify(userId)
-	person.Track(trackName, map[string]interface{}{})
+	person.Track(trackName, data)
 }
