@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bitbucket.org/dukex/uhura-api/entities"
+	"bitbucket.org/dukex/uhura-api/helpers"
 	"bitbucket.org/dukex/uhura-api/models"
 	login "github.com/dukex/login2"
 	"github.com/gin-gonic/gin"
@@ -32,8 +33,10 @@ func (s AuthService) ByProviderCallback(c *gin.Context) {
 	auth, _ := s.getAuth(c)
 	userID, err := auth.OAuthCallback(c.Params.ByName("provider"), c.Request)
 	if err == nil {
-		session := auth.Login(c.Request, strconv.FormatInt(userID, 10))
+		userIdint := strconv.FormatInt(userID, 10)
+		session := auth.Login(c.Request, userIdint)
 		session.Save(c.Request, c.Writer)
+		go helpers.NewEvent(userIdint, "login")
 	}
 
 	closeHTML := []byte("<html><head></head><body>Loading....<script>window.close()</script></body></html>")
@@ -51,6 +54,13 @@ func (s AuthService) GetUser(c *gin.Context) {
 		return
 	}
 
+	go func() {
+		person := helpers.MixpanelPerson(userId)
+		person.Update("$set", map[string]interface{}{
+			"$last_login": time.Now(),
+		})
+	}()
+
 	if user.ApiToken == "" {
 		token := login.NewUserToken()
 		hasher := md5.New()
@@ -64,7 +74,11 @@ func (s AuthService) GetUser(c *gin.Context) {
 }
 
 func (s AuthService) Logout(c *gin.Context) {
+
 	auth, _ := s.getAuth(c)
+	userId, _ := auth.CurrentUser(c.Request)
+
+	go helpers.NewEvent(userId, "logout")
 	session := auth.Logout(c.Request)
 	session.Save(c.Request, c.Writer)
 
