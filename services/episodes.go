@@ -115,9 +115,9 @@ func (s EpisodeService) Download(c *gin.Context) {
 	}
 
 	if c.Request.Method == "HEAD" {
-		c.Writer.Header().Set("Content-Length", strconv.Itoa(int(response.ContentLength)))
 		body = nil
 	}
 
+	c.Writer.Header().Set("Content-Length", strconv.Itoa(int(response.ContentLength)))
 	c.Data(200, response.Header.Get("Content-Type"), body)
 }
