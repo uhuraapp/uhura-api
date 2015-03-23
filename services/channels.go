@@ -50,11 +50,15 @@ func (s ChannelsService) getEpisodes(channelID int64, channelUri string, userId 
 
 	var listeneds []int64
 
-	s.DB.Table(models.Listened{}.TableName()).
-		Where("item_id IN (?)", ids).
-		Where("viewed = true").
-		Where("user_id = ?", userId).
-		Pluck("item_id", &listeneds)
+	if len(ids) > 0 {
+		s.DB.Table(models.Listened{}.TableName()).
+			Where("item_id IN (?)", ids).
+			Where("viewed = true").
+			Where("user_id = ?", userId).
+			Pluck("item_id", &listeneds)
+	} else {
+		listeneds = make([]int64, 0)
+	}
 
 	for _, episode := range episodes {
 		episode.ChannelUri = channelUri

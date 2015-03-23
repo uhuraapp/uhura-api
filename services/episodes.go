@@ -45,11 +45,15 @@ func (s EpisodeService) GetPaged(c *gin.Context) {
 		Find(&episodes).
 		Pluck("id", &ids)
 
-	s.DB.Table(models.Listened{}.TableName()).
-		Where("item_id IN (?)", ids).
-		Where("viewed = true").
-		Where("user_id = ?", userId).
-		Pluck("item_id", &listeneds)
+	if len(ids) > 0 {
+		s.DB.Table(models.Listened{}.TableName()).
+			Where("item_id IN (?)", ids).
+			Where("viewed = true").
+			Where("user_id = ?", userId).
+			Pluck("item_id", &listeneds)
+	} else {
+		listeneds = make([]int64, 0)
+	}
 
 	for _, episode := range episodes {
 		episode.ChannelUri = params.Get("channel_id")
