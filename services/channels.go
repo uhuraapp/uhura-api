@@ -45,8 +45,11 @@ func (s ChannelsService) getEpisodes(channelID int64, channelUri string, userId 
 		Where("channel_id = ?", channelID).
 		Order("published_at DESC").
 		Limit(20).
-		Find(&episodes).
-		Pluck("id", &ids)
+		Find(&episodes)
+
+	for _, e := range episodes {
+		ids = append(ids, e.Id)
+	}
 
 	var listeneds []int64
 
