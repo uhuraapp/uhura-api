@@ -55,11 +55,16 @@ func (h UserHelpers) ByToken(token string) (int64, bool) {
 		return 0, false
 	}
 
+	if CACHED_TOKEN[token] != 0 {
+		return CACHED_TOKEN[token], true
+	}
+
 	err := h.DB.Table(User{}.TableName()).Where("api_token = ?", token).First(&user).Error
 	if err != nil {
 		return 0, false
 	}
 
+	CACHED_TOKEN[token] = user.Id
 	return user.Id, true
 }
 
@@ -85,4 +90,10 @@ func (h UserHelpers) createFromOAuth(provider string, temp *login2.User) (int64,
 	err := h.DB.Table(User{}.TableName()).Save(&user).Error
 
 	return user.Id, err
+}
+
+var CACHED_TOKEN map[string]int64
+
+func init() {
+	CACHED_TOKEN = make(map[string]int64, 0)
 }
