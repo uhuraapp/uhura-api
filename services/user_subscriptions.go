@@ -34,13 +34,13 @@ func (s UserSubscriptionService) Index(c *gin.Context) {
 		s.DB.Table(models.Channel{}.TableName()).Where("id in (?)", ids).Find(&subscriptions)
 	}
 
-	for i, _ := range subscriptions {
-		//subscriptions[i].Uri = channel.FixUri()
-		//go subscriptions[i].SetSubscribed(userId)
-		//subscriptions[i].SetEpisodesIds()
-		subscriptions[i].ToView = subscriptions[i].GetToView(s.DB, userId)
-		// subscriptions[i].Subscribed = true
-	}
+	// for i, _ := range subscriptions {
+	//	subscriptions[i].Uri = channel.FixUri()
+	//	go subscriptions[i].SetSubscribed(userId)
+	//	subscriptions[i].SetEpisodesIds()
+	//	subscriptions[i].ToView = subscriptions[i].GetToView(s.DB, userId)
+	//	subscriptions[i].Subscribed = true
+	// }
 
 	c.JSON(200, gin.H{"subscriptions": subscriptions})
 }
