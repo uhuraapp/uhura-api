@@ -59,6 +59,7 @@ func Mount(_r *gin.RouterGroup) {
 		r.POST("/episodes/:id/listened", needAuth, episodes.Listened)
 		r.DELETE("/episodes/:id/listened", needAuth, episodes.Unlistened)
 		r.GET("/episodes/:id/download", needAuth, episodes.Download)
+		r.HEAD("/episodes/:id/download", needAuth, episodes.Download)
 
 		r.GET("/subscriptions/top", subscriptions.Top)
 		r.GET("/categories", categories.Index)
