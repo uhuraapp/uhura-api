@@ -96,28 +96,37 @@ func (s EpisodeService) Unlistened(c *gin.Context) {
 
 func (s EpisodeService) Download(c *gin.Context) {
 	var episode models.Episode
+	var body []byte
+
 	episodeId, _ := strconv.Atoi(c.Params.ByName("id"))
 
 	s.DB.Table(models.Episode{}.TableName()).Where("id = ?", episodeId).First(&episode)
 
-	response, err := http.Get(episode.SourceUrl)
-	if err != nil {
-		c.AbortWithStatus(500)
-		return
+	if c.Request.Method == "HEAD" && episode.ContentLength > 0 {
+	} else {
+		response, err := http.Get(episode.SourceUrl)
+		if err != nil {
+			c.AbortWithStatus(500)
+			return
+		}
+		defer response.Body.Close()
+
+		body, err = ioutil.ReadAll(response.Body)
+
+		if err != nil {
+			c.AbortWithStatus(500)
+			return
+		}
+
+		episode.ContentLength = response.ContentLength
+		episode.ContentType = response.Header.Get("Content-Type")
+
+		go s.DB.Table(models.Episode{}.TableName()).Where("id = ?", episodeId).Update(map[string]interface{}{
+			"content_length": episode.ContentLength,
+			"content_type":   episode.ContentType,
+		})
 	}
 
-	defer response.Body.Close()
-	body, err := ioutil.ReadAll(response.Body)
-
-	if err != nil {
-		c.AbortWithStatus(500)
-		return
-	}
-
-	if c.Request.Method == "HEAD" {
-		body = nil
-	}
-
-	c.Writer.Header().Set("Content-Length", strconv.Itoa(int(response.ContentLength)))
-	c.Data(200, response.Header.Get("Content-Type"), body)
+	c.Writer.Header().Set("Content-Length", strconv.Itoa(int(episode.ContentLength)))
+	c.Data(200, episode.ContentType, body)
 }

@@ -8,16 +8,18 @@ import (
 )
 
 type Episode struct {
-	Id          int64
-	ChannelId   int64
-	Key         string `sql:"unique"`
-	SourceUrl   string `sql:"not null;unique"`
-	Title       string
-	Description string
-	PublishedAt time.Time `sql:"not null"`
-	Duration    string
-	Uri         string
-	Type        string
+	Id            int64
+	ChannelId     int64
+	Key           string `sql:"unique"`
+	SourceUrl     string `sql:"not null;unique"`
+	Title         string
+	Description   string
+	PublishedAt   time.Time `sql:"not null"`
+	Duration      string
+	Uri           string
+	ContentLength int64
+	Type          string
+	ContentType   string
 	helpers.Uriable
 }
 
