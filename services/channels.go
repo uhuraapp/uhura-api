@@ -2,7 +2,6 @@ package services
 
 import (
 	"bitbucket.org/dukex/uhura-api/entities"
-	"bitbucket.org/dukex/uhura-api/helpers"
 	"bitbucket.org/dukex/uhura-api/models"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
@@ -51,21 +50,29 @@ func (s ChannelsService) getEpisodes(channelID int64, channelUri string, userId 
 		ids = append(ids, e.Id)
 	}
 
-	var listeneds []int64
+	var listeneds []*models.Listened
 
 	if len(ids) > 0 {
 		s.DB.Table(models.Listened{}.TableName()).
 			Where("item_id IN (?)", ids).
-			Where("viewed = true").
 			Where("user_id = ?", userId).
-			Pluck("item_id", &listeneds)
+			Find(&listeneds)
 	} else {
-		listeneds = make([]int64, 0)
+		listeneds = make([]*models.Listened, 0)
+	}
+
+	mapListened := make(map[int64]*models.Listened, 0)
+	for _, listen := range listeneds {
+		mapListened[listen.ItemId] = listen
 	}
 
 	for _, episode := range episodes {
 		episode.ChannelUri = channelUri
-		episode.Listened = helpers.Contains(listeneds, episode.Id)
+
+		if mapListened[episode.Id] != nil {
+			episode.Listened = mapListened[episode.Id].Viewed
+			episode.StoppedAt = mapListened[episode.Id].StoppedAt
+		}
 	}
 
 	return

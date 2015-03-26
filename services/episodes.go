@@ -25,7 +25,7 @@ func (s EpisodeService) GetPaged(c *gin.Context) {
 	var (
 		episodes  []*entities.Episode
 		ids       []int64
-		listeneds []int64
+		listeneds []models.Listened
 		userId    string
 	)
 
@@ -50,14 +50,18 @@ func (s EpisodeService) GetPaged(c *gin.Context) {
 			Where("item_id IN (?)", ids).
 			Where("viewed = true").
 			Where("user_id = ?", userId).
-			Pluck("item_id", &listeneds)
+			Find(&listeneds)
 	} else {
-		listeneds = make([]int64, 0)
+		listeneds = make([]models.Listened, 0)
 	}
 
 	for _, episode := range episodes {
 		episode.ChannelUri = params.Get("channel_id")
-		episode.Listened = helpers.Contains(listeneds, episode.Id)
+		listened, ok := helpers.Returns(listeneds, "ItemId", episode.Id).(models.Listened)
+		if ok {
+			episode.Listened = listened.Viewed
+			episode.StoppedAt = listened.StoppedAt
+		}
 	}
 
 	c.JSON(200, map[string]interface{}{"episodes": episodes})
@@ -73,6 +77,7 @@ func (s EpisodeService) Listened(c *gin.Context) {
 	s.DB.Table(models.Listened{}.TableName()).Assign(&models.Listened{
 		Viewed:    true,
 		CreatedAt: time.Now(),
+		StoppedAt: 0,
 	}).Where(&models.Listened{
 		UserId:    int64(userId),
 		ItemId:    int64(episodeId),
