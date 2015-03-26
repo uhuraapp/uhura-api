@@ -8,7 +8,9 @@ type Listened struct {
 	ItemId    int64
 	Viewed    bool
 	ChannelId int64
+	StoppedAt int64
 	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func (l Listened) TableName() string {

@@ -82,6 +82,31 @@ func (s EpisodeService) Listened(c *gin.Context) {
 	go helpers.NewEvent(_userId.(string), "listened", map[string]interface{}{"episode_id": episode.Id, "channel_id": episode.ChannelId})
 }
 
+func (s EpisodeService) Listen(c *gin.Context) {
+	var episode models.Episode
+	episodeId, _ := strconv.Atoi(c.Params.ByName("id"))
+	userId, _ := helpers.GetUser(c)
+	at, err := strconv.Atoi(c.Request.URL.Query().Get("at"))
+	if err == nil {
+		c.Abort()
+		return
+	}
+
+	err = s.DB.Table(models.Episode{}.TableName()).Where("id = ?", episodeId).First(&episode).Error
+	if err == nil {
+		s.DB.Table(models.Listened{}.TableName()).Assign(&models.Listened{
+			UpdatedAt: time.Now(),
+			StoppedAt: int64(at),
+		}).Where(&models.Listened{
+			UserId:    int64(userId),
+			ItemId:    int64(episodeId),
+			ChannelId: episode.ChannelId,
+		}).FirstOrCreate(&models.Listened{})
+		c.Data(204, "", []byte(""))
+	}
+	c.AbortWithStatus(404)
+}
+
 func (s EpisodeService) Unlistened(c *gin.Context) {
 	var episode models.Episode
 	episodeId, _ := strconv.Atoi(c.Params.ByName("id"))
