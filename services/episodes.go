@@ -102,8 +102,8 @@ func (s EpisodeService) Listen(c *gin.Context) {
 			ItemId:    int64(episodeId),
 			ChannelId: episode.ChannelId,
 		}).FirstOrCreate(&models.Listened{})
-		c.Data(204, "", []byte(""))
 	}
+
 	c.AbortWithStatus(404)
 }
 
