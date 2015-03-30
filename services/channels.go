@@ -1,6 +1,8 @@
 package services
 
 import (
+	"time"
+
 	"bitbucket.org/dukex/uhura-api/entities"
 	"bitbucket.org/dukex/uhura-api/models"
 	"github.com/gin-gonic/gin"
@@ -37,6 +39,16 @@ func (s ChannelsService) Get(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{"channel": channel, "episodes": episodes})
+}
+
+func (s ChannelsService) Open(c *gin.Context) {
+	var channel entities.Channel
+	channelURI := c.Params.ByName("uri")
+	s.DB.Table(models.Channel{}.TableName()).Update(&models.Channel{
+		VisitedAt: time.Now().UTC(),
+	}).Where("uri = ?", channelURI).First(&channel)
+
+	c.JSON(200, gin.H{})
 }
 
 func (s ChannelsService) getEpisodes(channelID int64, channelUri string, userId string) (ids []int64, episodes []*entities.Episode) {

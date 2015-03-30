@@ -39,6 +39,7 @@ func Mount(_r *gin.RouterGroup) {
 		r.OPTIONS("*action", func(c *gin.Context) { c.Data(200, "", []byte{}) })
 
 		r.GET("/channels/:uri", channels.Get)
+		r.GET("/channels/:uri/open", channels.Open)
 
 		r.GET("/auth/:provider", auth.ByProvider)
 		r.GET("/auth/:provider/callback", auth.ByProviderCallback)
@@ -59,6 +60,4 @@ func Mount(_r *gin.RouterGroup) {
 
 		r.GET("/categories", categories.Index)
 	}
-
-	// GetRecommendations(DB)
 }

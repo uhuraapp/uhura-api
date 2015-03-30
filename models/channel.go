@@ -18,6 +18,7 @@ type Channel struct {
 	Featured      bool
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
+	VisitedAt     time.Time
 	Language      string
 	Link          string
 	Loading       bool
