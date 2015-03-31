@@ -23,16 +23,11 @@ func NewEpisodesService(db gorm.DB) EpisodeService {
 
 func (s EpisodeService) GetPaged(c *gin.Context) {
 	var (
-		episodes  []*entities.Episode
-		ids       []int64
-		listeneds []models.Listened
-		userId    string
+		episodes []*entities.Episode
+		userId   int
 	)
 
-	_userId, err := c.Get("user_id")
-	if err == nil {
-		userId = _userId.(string)
-	}
+	userId, _ = helpers.GetUser(c)
 
 	params := c.Request.URL.Query()
 
@@ -42,27 +37,9 @@ func (s EpisodeService) GetPaged(c *gin.Context) {
 		Where("published_at < ?", params.Get("since")).
 		Order("published_at DESC").
 		Limit(params.Get("per_page")).
-		Find(&episodes).
-		Pluck("id", &ids)
+		Find(&episodes)
 
-	if len(ids) > 0 {
-		s.DB.Table(models.Listened{}.TableName()).
-			Where("item_id IN (?)", ids).
-			Where("viewed = true").
-			Where("user_id = ?", userId).
-			Find(&listeneds)
-	} else {
-		listeneds = make([]models.Listened, 0)
-	}
-
-	for _, episode := range episodes {
-		episode.ChannelUri = params.Get("channel_id")
-		listened, ok := helpers.Returns(listeneds, "ItemId", episode.Id).(models.Listened)
-		if ok {
-			episode.Listened = listened.Viewed
-			episode.StoppedAt = listened.StoppedAt
-		}
-	}
+	entities.SetListenAttributesToEpisode(s.DB, userId, episodes, params.Get("channel_id"))
 
 	c.JSON(200, map[string]interface{}{"episodes": episodes})
 }
