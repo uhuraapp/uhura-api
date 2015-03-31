@@ -22,13 +22,10 @@ func NewEpisodesService(db gorm.DB) EpisodeService {
 }
 
 func (s EpisodeService) GetPaged(c *gin.Context) {
-	var (
-		episodes []*entities.Episode
-		userId   int
-	)
+	var episodes []*entities.Episode
+	var channelURI []string
 
-	userId, _ = helpers.GetUser(c)
-
+	userId, _ := helpers.GetUser(c)
 	params := c.Request.URL.Query()
 
 	s.
@@ -39,7 +36,12 @@ func (s EpisodeService) GetPaged(c *gin.Context) {
 		Limit(params.Get("per_page")).
 		Find(&episodes)
 
-	entities.SetListenAttributesToEpisode(s.DB, userId, episodes, params.Get("channel_id"))
+	s.
+		DB.Table(models.Channel{}.TableName()).
+		Where("id = ?", params.Get("channel_id")).
+		Pluck("uri", &channelURI)
+
+	entities.SetListenAttributesToEpisode(s.DB, userId, episodes, channelURI[0])
 
 	c.JSON(200, map[string]interface{}{"episodes": episodes})
 }
