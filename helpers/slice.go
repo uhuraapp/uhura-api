@@ -35,3 +35,15 @@ func Returns(slice interface{}, name string, val interface{}) interface{} {
 	}
 	return false
 }
+
+func AppendIfMissing(slice []string, i string) []string {
+	if i == "" {
+		return slice
+	}
+	for _, e := range slice {
+		if e == i {
+			return slice
+		}
+	}
+	return append(slice, i)
+}

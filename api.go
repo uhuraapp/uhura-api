@@ -29,6 +29,7 @@ func Mount(_r *gin.RouterGroup) {
 	episodes := services.NewEpisodesService(DB)
 	auth := services.NewAuthService(DB)
 	categories := services.NewCategoriesService(DB)
+	parser := services.NewParser(DB)
 
 	_r.Use(middleware.Authentication(DB))
 
@@ -40,6 +41,8 @@ func Mount(_r *gin.RouterGroup) {
 
 		r.GET("/channels/:uri", channels.Get)
 		r.GET("/channels/:uri/open", channels.Open)
+
+		r.GET("/parser/*url", parser.ByURL)
 
 		r.GET("/auth/:provider", auth.ByProvider)
 		r.GET("/auth/:provider/callback", auth.ByProviderCallback)
