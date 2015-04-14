@@ -3,6 +3,16 @@
 	"GoVersion": "go1.4.2",
 	"Deps": [
 		{
+			"ImportPath": "code.google.com/p/go-charset/charset",
+			"Comment": "null-32",
+			"Rev": "ebbeafdc430eb6c7e44e9a730a38eaff4c56ba3a"
+		},
+		{
+			"ImportPath": "code.google.com/p/go-charset/data",
+			"Comment": "null-32",
+			"Rev": "ebbeafdc430eb6c7e44e9a730a38eaff4c56ba3a"
+		},
+		{
 			"ImportPath": "code.google.com/p/go.crypto/bcrypt",
 			"Comment": "null-236",
 			"Rev": "69e2a90ed92d03812364aeb947b7068dc42e561e"
@@ -29,18 +39,6 @@
 			"Rev": "311ebb7422d3ff70cc1d064c5a297520ff5f304a"
 		},
 		{
-			"ImportPath": "github.com/franela/goreq",
-			"Rev": "5b647289f142b20a04479865775135b76e23cab8"
-		},
-		{
-			"ImportPath": "github.com/garyburd/redigo/internal",
-			"Rev": "535138d7bcd717d6531c701ef5933d98b1866257"
-		},
-		{
-			"ImportPath": "github.com/garyburd/redigo/redis",
-			"Rev": "535138d7bcd717d6531c701ef5933d98b1866257"
-		},
-		{
 			"ImportPath": "github.com/gin-gonic/gin",
 			"Comment": "v0.5",
 			"Rev": "50e7e427300a7eeeb299a4cd5bc1ebfa04d48528"
@@ -58,12 +56,16 @@
 			"Rev": "1f45645972a051deb63c8e8e3c594041a6145e35"
 		},
 		{
-			"ImportPath": "github.com/hjr265/too",
-			"Rev": "9ecde9c8935e0252fab39816e45c51691883c197"
-		},
-		{
 			"ImportPath": "github.com/jinzhu/gorm",
 			"Rev": "61a878dc2db933e665471741005a2ce8730f715c"
+		},
+		{
+			"ImportPath": "github.com/jteeuwen/go-pkg-rss",
+			"Rev": "5576b8d83ed75cbb4bc43ef18c07414f880b3472"
+		},
+		{
+			"ImportPath": "github.com/jteeuwen/go-pkg-xmlx",
+			"Rev": "cf505b97c711dd1c5a4682f68ea04dd35e385b8f"
 		},
 		{
 			"ImportPath": "github.com/julienschmidt/httprouter",
@@ -73,6 +75,10 @@
 			"ImportPath": "github.com/lib/pq",
 			"Comment": "go1.0-cutoff-28-g72d960f",
 			"Rev": "72d960fe96ac86dfd376b0de7ca81c0334838d0b"
+		},
+		{
+			"ImportPath": "github.com/op/go-logging",
+			"Rev": "e5fb9bb8a3a168cc269b38f092b65d2e18cebb9a"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/blowfish",
