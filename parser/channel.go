@@ -6,17 +6,17 @@ import (
 )
 
 type Channel struct {
-	Title       string
-	Subtitle    string
-	Description string
-	Language    string
-	Copyright   string
-	PubDate     string
-	Summary     string
-	Category    string
-	Author      string
-	Image       string
-	Links       []string
+	Title       string   `json:"title"`
+	Subtitle    string   `json:"subtitle"`
+	Description string   `json:"description"`
+	Summary     string   `json:"summary"`
+	Language    string   `json:"language"`
+	Copyright   string   `json:"copyright"`
+	PubDate     string   `json:"pub_date"`
+	Category    string   `json:"category"`
+	Author      string   `json:"author"`
+	Image       string   `json:"image_url"`
+	Links       []string `json:"links"`
 
 	requestedURL string
 	feedURL      string

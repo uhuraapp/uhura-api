@@ -3,13 +3,13 @@ package parser
 import rss "github.com/jteeuwen/go-pkg-rss"
 
 type Episode struct {
-	Title      string
-	Enclosures []*rss.Enclosure
-	PubDate    string
-	ID         string
-	Subtitle   string
-	Summary    string
-	Duration   string
+	ID         string           `json:"id"`
+	Title      string           `json:"title"`
+	Subtitle   string           `json:"subtitle"`
+	Summary    string           `json:"summary"`
+	Enclosures []*rss.Enclosure `json:"enclosures"`
+	PubDate    string           `json:"pub_date"`
+	Duration   string           `json:"duration"`
 
 	iTunes
 	Feed *rss.Item `json:"-"`
