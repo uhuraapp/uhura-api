@@ -7,14 +7,13 @@ import (
 )
 
 type Fetcher struct {
-	channel  chan<- *Channel
-	episodes chan<- []*Episode
-	err      chan<- error
-	url      string
+	channel chan<- *Channel
+	err     chan<- error
+	url     string
 }
 
-func NewFetcher(url string, c chan<- *Channel, e chan<- []*Episode, err chan<- error) *Fetcher {
-	return &Fetcher{c, e, err, url}
+func NewFetcher(url string, c chan<- *Channel, err chan<- error) *Fetcher {
+	return &Fetcher{c, err, url}
 }
 
 func (f *Fetcher) run() error {
@@ -39,7 +38,8 @@ func (f *Fetcher) episodeHandler(feed *rss.Feed, rssChannel *rss.Channel, episod
 		log.Debug("has new URL: %s != %s", channel.NewURL(), feed.Url)
 		f.rerun(channel.NewURL())
 	} else {
-		f.finish(channel, f.createEpisodes(episodes))
+		f.appendEpisodes(channel, episodes)
+		f.finish(channel)
 	}
 }
 
@@ -48,21 +48,27 @@ func (f *Fetcher) rerun(newURL string) {
 	f.run()
 }
 
-func (f *Fetcher) finish(channel *Channel, episodes []*Episode) {
+func (f *Fetcher) finish(channel *Channel) {
 	channel.feedURL = f.url
 
+	f.buildRecords(channel)
+
 	f.channel <- channel
-	f.episodes <- episodes
 	close(f.channel)
-	close(f.episodes)
 }
 
-func (f *Fetcher) createEpisodes(e []*rss.Item) (episodes []*Episode) {
+func (f *Fetcher) appendEpisodes(c *Channel, e []*rss.Item) {
 	for k, _ := range e {
-		episodes = append(episodes, &Episode{Feed: e[k]})
+		c.Episodes = append(c.Episodes, &Episode{Feed: e[k]})
 	}
 	return
+}
 
+func (f *Fetcher) buildRecords(c *Channel) {
+	c.Build()
+	for _, e := range c.Episodes {
+		e.Build()
+	}
 }
 
 func (f *Fetcher) _c(feed *rss.Feed, channels []*rss.Channel) {}
