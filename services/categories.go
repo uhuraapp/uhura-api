@@ -29,7 +29,7 @@ func (s *CategoriesService) cacheCategoriesAndChannels() {
 	var channels []*entities.Channel
 
 	if len(s.categories) == 0 {
-		s.DB.Table(models.Category{}.TableName()).Find(&categories)
+		s.DB.Table(models.Category{}.TableName()).Order("name").Find(&categories)
 
 		categoriesIDs := helpers.MapInt(categories, fncategoryID)
 
@@ -58,11 +58,12 @@ func (s *CategoriesService) cacheCategoriesAndChannels() {
 				if fcategory && fchannel {
 					channel.Episodes = make([]int64, 0)
 					category.ChannelsIDs = append(category.ChannelsIDs, channel.Uri)
+
+					s.channels = uniqChannel(append(s.channels, channel))
+					s.categories = uniqCategory(append(s.categories, category))
 				}
 			}
 		}
-		s.categories = categories
-		s.channels = channels
 	}
 }
 
@@ -90,4 +91,34 @@ func findChannel(channels []*entities.Channel, id int64) (*entities.Channel, boo
 
 func fncategoryID(c interface{}) int64 {
 	return c.(*entities.Category).Id
+}
+
+func uniqCategory(cs []*entities.Category) []*entities.Category {
+	m := map[int64]bool{}
+
+	for _, v := range cs {
+		if _, seen := m[v.Id]; !seen {
+			cs[len(m)] = v
+			m[v.Id] = true
+		}
+	}
+
+	cs = cs[:len(m)]
+
+	return cs
+}
+
+func uniqChannel(cs []*entities.Channel) []*entities.Channel {
+	m := map[int64]bool{}
+
+	for _, v := range cs {
+		if _, seen := m[v.Id]; !seen {
+			cs[len(m)] = v
+			m[v.Id] = true
+		}
+	}
+
+	cs = cs[:len(m)]
+
+	return cs
 }
