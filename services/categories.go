@@ -11,7 +11,7 @@ import (
 type CategoriesService struct {
 	DB         gorm.DB
 	categories []*entities.Category
-	channels   []entities.Channel
+	channels   []*entities.Channel
 }
 
 func NewCategoriesService(db gorm.DB) CategoriesService {
@@ -26,7 +26,7 @@ func (s *CategoriesService) Index(c *gin.Context) {
 
 func (s *CategoriesService) cacheCategoriesAndChannels() {
 	var categories []*entities.Category
-	var channels []entities.Channel
+	var channels []*entities.Channel
 
 	if len(s.categories) == 0 {
 		s.DB.Table(models.Category{}.TableName()).Find(&categories)
@@ -36,7 +36,7 @@ func (s *CategoriesService) cacheCategoriesAndChannels() {
 		if len(categoriesIDs) > 0 {
 			var channelsCategories []models.Categoriable
 
-			s.DB.Select("DISTINCT(channel_id), category_id").Table(models.Categoriable{}.TableName()).
+			s.DB.Select("DISTINCT ON (channel_id) channel_id, category_id").Table(models.Categoriable{}.TableName()).
 				Where("channel_id NOT IN (0)").
 				Where("category_id IN (?)", categoriesIDs).
 				Find(&channelsCategories)
@@ -56,6 +56,7 @@ func (s *CategoriesService) cacheCategoriesAndChannels() {
 				category, fcategory := findCategory(categories, cc.CategoryId)
 				channel, fchannel := findChannel(channels, cc.ChannelId)
 				if fcategory && fchannel {
+					channel.Episodes = make([]int64, 0)
 					category.ChannelsIDs = append(category.ChannelsIDs, channel.Uri)
 				}
 			}
@@ -64,6 +65,8 @@ func (s *CategoriesService) cacheCategoriesAndChannels() {
 		s.channels = channels
 	}
 }
+
+// ------
 
 func findCategory(categories []*entities.Category, id int64) (*entities.Category, bool) {
 	for _, c := range categories {
@@ -75,17 +78,15 @@ func findCategory(categories []*entities.Category, id int64) (*entities.Category
 	return nil, false
 }
 
-func findChannel(channels []entities.Channel, id int64) (entities.Channel, bool) {
+func findChannel(channels []*entities.Channel, id int64) (*entities.Channel, bool) {
 	for _, c := range channels {
 		if c.Id == id {
 			return c, true
 		}
 	}
 
-	return entities.Channel{}, false
+	return nil, false
 }
-
-// ------
 
 func fncategoryID(c interface{}) int64 {
 	return c.(*entities.Category).Id
