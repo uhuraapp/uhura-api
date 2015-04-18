@@ -47,3 +47,18 @@ func AppendIfMissing(slice []string, i string) []string {
 	}
 	return append(slice, i)
 }
+
+func RemoveDuplicates(s []int64) []int64 {
+	m := map[int64]bool{}
+
+	for _, v := range s {
+		if _, seen := m[v]; !seen {
+			s[len(m)] = v
+			m[v] = true
+		}
+	}
+
+	r := s[:len(m)]
+
+	return r
+}

@@ -2,43 +2,91 @@ package services
 
 import (
 	"bitbucket.org/dukex/uhura-api/entities"
+	"bitbucket.org/dukex/uhura-api/helpers"
 	"bitbucket.org/dukex/uhura-api/models"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 )
 
 type CategoriesService struct {
-	DB gorm.DB
+	DB         gorm.DB
+	categories []*entities.Category
+	channels   []entities.Channel
 }
 
 func NewCategoriesService(db gorm.DB) CategoriesService {
-	return CategoriesService{DB: db}
+	c := CategoriesService{DB: db}
+	return c
 }
 
-func (s CategoriesService) Index(c *gin.Context) {
-	var tmpCategories []entities.Category
-	categories := make([]entities.Category, 0)
+func (s *CategoriesService) Index(c *gin.Context) {
+	s.cacheCategoriesAndChannels()
+	c.JSON(200, gin.H{"categories": s.categories, "channels": s.channels})
+}
 
-	s.DB.Table(models.Category{}.TableName()).Find(&tmpCategories)
+func (s *CategoriesService) cacheCategoriesAndChannels() {
+	var categories []*entities.Category
+	var channels []entities.Channel
 
-	channelsIds := []int64{0}
+	if len(s.categories) == 0 {
+		s.DB.Table(models.Category{}.TableName()).Find(&categories)
 
-	for i, _ := range tmpCategories {
-		var id []int64
-		s.DB.Table(models.Categoriable{}.TableName()).
-			Where("channel_id NOT IN (?)", channelsIds).
-			Where("category_id = ?", tmpCategories[i].Id).
-			Order("channel_id DESC").
-			Limit(1).
-			Pluck("channel_id", &id)
+		categoriesIDs := helpers.MapInt(categories, fncategoryID)
 
-		if len(id) > 0 {
-			s.DB.Table(models.Channel{}.TableName()).Where("id = ?", id[0]).First(&tmpCategories[i].Channel)
-			categories = append(categories, tmpCategories[i])
+		if len(categoriesIDs) > 0 {
+			var channelsCategories []models.Categoriable
+
+			s.DB.Select("DISTINCT(channel_id), category_id").Table(models.Categoriable{}.TableName()).
+				Where("channel_id NOT IN (0)").
+				Where("category_id IN (?)", categoriesIDs).
+				Find(&channelsCategories)
+
+			channelsIDs := make([]int64, 0)
+			for _, cc := range channelsCategories {
+				channelsIDs = append(channelsIDs, cc.ChannelId)
+			}
+
+			channelsIDs = helpers.RemoveDuplicates(channelsIDs)
+
+			s.DB.Table(models.Channel{}.TableName()).
+				Where("id IN (?)", channelsIDs).
+				Find(&channels)
+
+			for _, cc := range channelsCategories {
+				category, fcategory := findCategory(categories, cc.CategoryId)
+				channel, fchannel := findChannel(channels, cc.ChannelId)
+				if fcategory && fchannel {
+					category.ChannelsIDs = append(category.ChannelsIDs, channel.Uri)
+				}
+			}
 		}
+		s.categories = categories
+		s.channels = channels
+	}
+}
 
-		channelsIds = append(channelsIds, id...)
+func findCategory(categories []*entities.Category, id int64) (*entities.Category, bool) {
+	for _, c := range categories {
+		if c.Id == id {
+			return c, true
+		}
 	}
 
-	c.JSON(200, gin.H{"categories": categories})
+	return nil, false
+}
+
+func findChannel(channels []entities.Channel, id int64) (entities.Channel, bool) {
+	for _, c := range channels {
+		if c.Id == id {
+			return c, true
+		}
+	}
+
+	return entities.Channel{}, false
+}
+
+// ------
+
+func fncategoryID(c interface{}) int64 {
+	return c.(*entities.Category).Id
 }
