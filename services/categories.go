@@ -57,10 +57,13 @@ func (s *CategoriesService) cacheCategoriesAndChannels() {
 				channel, fchannel := findChannel(channels, cc.ChannelId)
 				if fcategory && fchannel {
 					channel.Episodes = make([]int64, 0)
-					category.ChannelsIDs = append(category.ChannelsIDs, channel.Uri)
 
-					s.channels = uniqChannel(append(s.channels, channel))
+					if len(category.ChannelsIDs) < 6 {
+						category.ChannelsIDs = append(category.ChannelsIDs, channel.Uri)
+						s.channels = uniqChannel(append(s.channels, channel))
+					}
 					s.categories = uniqCategory(append(s.categories, category))
+
 				}
 			}
 		}
