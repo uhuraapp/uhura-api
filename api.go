@@ -54,7 +54,7 @@ func Mount(_r *gin.RouterGroup) {
 		r.GET("/users/subscriptions/:uri", needAuth, userSubscriptions.Show)
 		r.DELETE("/users/subscriptions/:uri", needAuth, userSubscriptions.Delete)
 
-		r.GET("/episodes", needAuth, episodes.GetPaged)
+		r.GET("/episodes", episodes.GetPaged)
 		r.POST("/episodes/:id/listened", needAuth, episodes.Listened)
 		r.PUT("/episodes/:id/listen", needAuth, episodes.Listen)
 		r.DELETE("/episodes/:id/listened", needAuth, episodes.Unlistened)
