@@ -44,6 +44,10 @@ func (s *CategoriesService) Get(c *gin.Context) {
 		Where("id IN (?)", channelsIDs).
 		Find(&channels)
 
+	for _, channel := range channels {
+		category.ChannelsIDs = append(category.ChannelsIDs, channel.Uri)
+	}
+
 	c.JSON(200, gin.H{"category": category, "channels": channels})
 }
 
