@@ -62,5 +62,6 @@ func Mount(_r *gin.RouterGroup) {
 		r.HEAD("/episodes/:id/download", needAuth, episodes.Download)
 
 		r.GET("/categories", categories.Index)
+		r.GET("/categories/:uri", categories.Get)
 	}
 }

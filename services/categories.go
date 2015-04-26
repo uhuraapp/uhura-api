@@ -24,6 +24,29 @@ func (s *CategoriesService) Index(c *gin.Context) {
 	c.JSON(200, gin.H{"categories": s.categories, "channels": s.channels})
 }
 
+func (s *CategoriesService) Get(c *gin.Context) {
+	var category entities.Category
+	var channels []*entities.Channel
+
+	categoryURI := c.Params.ByName("uri")
+
+	s.DB.Table(models.Category{}.TableName()).Where("uri = ?", categoryURI).First(&category)
+
+	channelsIDs := make([]int64, 0)
+
+	s.DB.Select("DISTINCT ON (channel_id) channel_id, category_id").Table(models.Categoriable{}.TableName()).
+		Where("channel_id NOT IN (0)").
+		Where("category_id = ?", category.Id).
+		Pluck("channel_id", &channelsIDs)
+
+	channelsIDs = helpers.RemoveDuplicates(channelsIDs)
+	s.DB.Table(models.Channel{}.TableName()).
+		Where("id IN (?)", channelsIDs).
+		Find(&channels)
+
+	c.JSON(200, gin.H{"category": category, "channels": channels})
+}
+
 func (s *CategoriesService) cacheCategoriesAndChannels() {
 	var categories []*entities.Category
 	var channels []*entities.Channel
