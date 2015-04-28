@@ -15,7 +15,7 @@ func NewParser(_ gorm.DB) ParserService {
 }
 
 func (s ParserService) ByURL(c *gin.Context) {
-	url, err := helpers.ParseURL(c.Params.ByName("url"))
+	url, err := helpers.ParseURL(c.Request.URL.Query().Get("url"))
 	if err != nil {
 		c.JSON(500, map[string]string{"error": "URL invalid"})
 	}
