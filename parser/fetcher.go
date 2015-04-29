@@ -66,9 +66,13 @@ func (f *Fetcher) appendEpisodes(c *Channel, e []*rss.Item) {
 
 func (f *Fetcher) buildRecords(c *Channel) {
 	c.Build()
+	episodes := make([]*Episode, 0)
 	for _, e := range c.Episodes {
-		e.Build()
+		if(e.Build()) {
+			episodes = append(episodes, e)
+		}
 	}
+	c.Episodes = episodes
 }
 
 func (f *Fetcher) _c(feed *rss.Feed, channels []*rss.Channel) {}
