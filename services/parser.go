@@ -26,7 +26,20 @@ func (s ParserService) ByURL(c *gin.Context) {
 		c.JSON(500, map[string]interface{}{"error": err})
 	}
 
+	channel.UhuraId = s.findUhuraID(channel)
 	c.JSON(200, map[string]interface{}{
 		"channel": channel,
 	})
+}
+
+func (s ParserService) findUhuraID(c *parser.Channel) (string, bool) {
+	var channels []models.Channel
+
+	s.DB.Table(model.Channel{}.TableName()).Where("url in (?)", c.Links).Find(&channels)
+
+	if len(channels) < 1 {
+		return "", false
+	}
+
+	return channels[0].Uri
 }

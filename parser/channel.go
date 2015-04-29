@@ -18,6 +18,7 @@ type Channel struct {
 	Image       string     `json:"image_url"`
 	Links       []string   `json:"links"`
 	Episodes    []*Episode `json:"episodes"`
+	UhuraId     string     `json:"uhura_id"`
 
 	requestedURL string
 	feedURL      string

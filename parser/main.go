@@ -17,13 +17,13 @@ func URL(url *url.URL) (*Channel, error) {
 	go fetcher.run()
 
 	// 	//if isFeed(body) {
-	// 	//		xml := ParserXML(body)
-	// 	// channel := FindOrCreateChannel(xml)
-	// 	// UpdateChannel(channel, xml)
-	// 	// CacheImage(channel)
-	// 	// episodes := FindOrCreateEpisodes(channel, xml)
-	// 	// GetDelayBetweenEpisodes(episodes)
-	// 	// SetNewRun(channel)
+	// 	// [x] xml := ParserXML(body)
+	// 	// [ ] channel := FindOrCreateChannel(xml)
+	// 	// [ ] UpdateChannel(channel, xml)
+	// 	// [ ] CacheImage(channel)
+	// 	// [ ] episodes := FindOrCreateEpisodes(channel, xml)
+	// 	// [ ] GetDelayBetweenEpisodes(episodes)
+	// 	// [ ] SetNewRun(channel)
 	// 	//}
 	// 	return nil
 	// }
