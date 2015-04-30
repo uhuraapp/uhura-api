@@ -25,7 +25,9 @@ func (s ParserService) ByURL(c *gin.Context) {
 	channel, err := parser.URL(url)
 
 	if err != nil {
-		c.JSON(500, map[string]interface{}{"error": err})
+		c.JSON(500, gin.H{"error": err.Error()})
+		c.Abort()
+		return
 	}
 
 	channel.UhuraId = s.findUhuraID(channel)

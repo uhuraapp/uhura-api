@@ -35,9 +35,13 @@ func URL(url *url.URL) (*Channel, error) {
 		close(err)
 	}()
 
-	channel := <-c
-	channel.requestedURL = url.String()
-	log.Debug("finishing %s - %s", channel.Title, _error)
+	channel, ok := <-c
+	if ok {
+		channel.requestedURL = url.String()
+		log.Debug("finishing with %s - %s", channel.Title, _error)
+	} else {
+		log.Debug("finishing with error %s", _error)
+	}
 
 	return channel, _error
 }
