@@ -6,14 +6,16 @@ import (
 	_ "code.google.com/p/go-charset/data"
 )
 
-func URL(url *url.URL) (*Channel, error) {
-	var _error error
+func URL(url *url.URL) ([]*Channel, []error) {
+	var _errors []error
+	var channels []*Channel
 
 	c := make(chan *Channel)
+	finish := make(chan bool)
 	err := make(chan error)
 
 	log.Debug("creating fetcher")
-	fetcher := NewFetcher(url.String(), c, err)
+	fetcher := NewFetcher([]string{url.String()}, c, finish, err)
 	go fetcher.run()
 
 	// 	//if isFeed(body) {
@@ -29,21 +31,25 @@ func URL(url *url.URL) (*Channel, error) {
 	// }
 
 	go func() {
-		_error = <-err
-		log.Error("%s", _error)
-		close(c)
-		close(err)
+		e := <-err
+		_errors = append(_errors, e)
+		log.Error("%s", e)
 	}()
 
-	channel, ok := <-c
-	if ok {
-		channel.requestedURL = url.String()
-		log.Debug("finishing with %s - %s", channel.Title, _error)
-	} else {
-		log.Debug("finishing with error %s", _error)
-	}
+	go func() {
+		channel, ok := <-c
+		if ok {
+			channel.requestedURL = url.String()
+			log.Debug("finishing with %s", channel.Title)
+			channels = append(channels, channel)
+		} else {
+			log.Debug("finishing with error %s")
+		}
+	}()
 
-	return channel, _error
+	<-finish
+
+	return channels, _errors
 }
 
 // func ProcessChannel(channel *rss.Channel) {

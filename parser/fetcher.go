@@ -3,6 +3,7 @@ package parser
 import (
 	"errors"
 	"regexp"
+	"sync"
 
 	charset "code.google.com/p/go-charset/charset"
 	_ "code.google.com/p/go-charset/data"
@@ -12,58 +13,81 @@ import (
 type Fetcher struct {
 	channel chan<- *Channel
 	err     chan<- error
-	url     string
+	finish  chan<- bool
+	urls    []string
 }
 
-func NewFetcher(url string, c chan<- *Channel, err chan<- error) *Fetcher {
-	return &Fetcher{c, err, url}
+func NewFetcher(urls []string, c chan<- *Channel, f chan<- bool, err chan<- error) *Fetcher {
+	return &Fetcher{c, err, f, urls}
 }
 
-func (f *Fetcher) run() error {
-	body, err := f.request()
+func (f *Fetcher) run() {
+	var wg sync.WaitGroup
+
+	for _, url := range f.urls {
+		wg.Add(1)
+		go func(url string) {
+			defer wg.Done()
+			f.process(url)
+		}(url)
+	}
+	wg.Wait()
+
+	f.finish <- true
+}
+
+func (f *Fetcher) process(url string) {
+	body, err := f.request(url)
 
 	if err != nil {
 		log.Debug("a new error %s", err.Error())
 		f.err <- err
-		return err
+		return
 	}
 
 	log.Debug("url is html: %s", f.isHTML(body))
 
 	if f.isHTML(body) {
-		err = errors.New("URL is a HTML page, should be the a XML Feed URL")
-		f.err <- err
-		return err
+		links := FindLinks(body)
+		log.Debug("links %s", links)
+		if len(links) > 0 {
+			for _, link := range links {
+				f.process(link)
+			}
+		} else {
+			err = errors.New("URL is a HTML page, should be the a XML Feed URL")
+			f.err <- err
+			return
+		}
 	}
 
-	rss.New(0, true, f._c, f.episodeHandler).
-		FetchBytes(f.url, body, charset.NewReader)
-
-	return nil
+	rss.New(0, true, f._c, f.episodeHandler(url)).
+		FetchBytes(url, body, charset.NewReader)
 }
 
-func (f *Fetcher) request() ([]byte, error) {
-	return RequestURL(f.url)
+func (f Fetcher) request(url string) ([]byte, error) {
+	return RequestURL(url)
 }
 
-func (f *Fetcher) episodeHandler(feed *rss.Feed, rssChannel *rss.Channel, episodes []*rss.Item) {
-	channel := &Channel{Feed: rssChannel}
-	if channel.HasNewURL() && channel.NewURL() != f.url {
-		log.Debug("has new URL: %s != %s", channel.NewURL(), feed.Url)
-		f.rerun(channel.NewURL())
-	} else {
-		f.appendEpisodes(channel, episodes)
-		f.finish(channel)
+func (f *Fetcher) episodeHandler(url string) func(*rss.Feed, *rss.Channel, []*rss.Item) {
+	return func(feed *rss.Feed, rssChannel *rss.Channel, episodes []*rss.Item) {
+		channel := &Channel{Feed: rssChannel}
+		if channel.HasNewURL() && channel.NewURL() != url {
+			log.Debug("has new URL: %s != %s", channel.NewURL(), feed.Url)
+			f.rerun(channel.NewURL())
+		} else {
+			f.appendEpisodes(channel, episodes)
+			f.send(channel, url)
+		}
 	}
 }
 
 func (f *Fetcher) rerun(newURL string) {
-	f.url = newURL
-	f.run()
+	f.process(newURL)
 }
 
-func (f *Fetcher) finish(channel *Channel) {
-	channel.feedURL = f.url
+func (f *Fetcher) send(channel *Channel, url string) {
+	channel.feedURL = url
 
 	f.buildRecords(channel)
 
