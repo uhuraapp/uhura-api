@@ -44,6 +44,7 @@ func Migrations(database gorm.DB) {
 	database.AutoMigrate(&models.Category{})
 
 	database.Model(&models.Channel{}).AddIndex("idx_channel_uri", "uri")
+	database.Model(&models.Channel{}).AddIndex("idx_channel_url", "url")
 
 	database.Model(&models.Episode{}).AddIndex("idx_episode_channel_id", "channel_id")
 	database.Model(&models.Episode{}).AddIndex("idx_episode_channel_id_with_published_at", "channel_id", "published_at")
