@@ -7,15 +7,17 @@ import (
 )
 
 func URL(url *url.URL) ([]*Channel, []error) {
-	var _errors []error
-	var channels []*Channel
-
-	c := make(chan *Channel)
-	finish := make(chan bool)
-	err := make(chan error)
-
 	log.Debug("creating fetcher")
-	fetcher := NewFetcher([]string{url.String()}, c, finish, err)
+
+	_errors  := make([]error, 0)
+	channels := make([]*Channel, 0)
+
+	c 			 := make(chan *Channel)
+	finish 	 := make(chan bool)
+	err 		 := make(chan error)
+
+	fetcher  := NewFetcher([]string{url.String()}, c, finish, err)
+
 	go fetcher.run()
 
 	// 	//if isFeed(body) {
