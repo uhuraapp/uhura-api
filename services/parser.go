@@ -35,13 +35,13 @@ func (s ParserService) ByURL(c *gin.Context) {
 }
 
 func (s ParserService) findUhuraID(c *parser.Channel) string {
-	var channels []models.Channel
+	var uris []string
 
-	s.DB.Table(models.Channel{}.TableName()).Where("url in (?)", c.Links).Find(&channels)
+	s.DB.Table(models.Channel{}.TableName()).Where("url in (?)", c.Links).Pluck("uri", &uris)
 
-	if len(channels) < 1 {
+	if len(uris) < 1 {
 		return ""
 	}
 
-	return channels[0].Uri
+	return uris[0]
 }
