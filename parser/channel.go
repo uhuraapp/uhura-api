@@ -1,11 +1,15 @@
 package parser
 
 import (
+	"crypto/md5"
+	"encoding/hex"
+
 	"bitbucket.org/dukex/uhura-api/helpers"
 	rss "github.com/jteeuwen/go-pkg-rss"
 )
 
 type Channel struct {
+	Id          string     `json:"id"`
 	Title       string     `json:"title"`
 	Subtitle    string     `json:"subtitle"`
 	Description string     `json:"description"`
@@ -47,6 +51,7 @@ func (c *Channel) Build() {
 	c.Category = c.attr(c, "category", "text")
 	c.Image = c.FixImage()
 	c.Links = c.GetLinks()
+	c.Id = c.GenerateID()
 
 	log.Debug("%s", c.Feed.Links)
 	log.Debug("channel build finished: %s", c.Title)
@@ -77,4 +82,10 @@ func (c *Channel) GetLinks() []string {
 	}
 
 	return links
+}
+
+func (c *Channel) GenerateID() string {
+	h := md5.New()
+	h.Write([]byte(c.Title))
+	return hex.EncodeToString(h.Sum(nil))
 }
