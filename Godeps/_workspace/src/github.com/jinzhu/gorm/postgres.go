@@ -5,7 +5,6 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"reflect"
-	"time"
 
 	"github.com/lib/pq/hstore"
 )
@@ -21,11 +20,7 @@ func (s *postgres) SupportLastInsertId() bool {
 	return false
 }
 
-func (s *postgres) HasTop() bool {
-	return false
-}
-
-func (s *postgres) SqlTag(value reflect.Value, size int) string {
+func (d *postgres) SqlTag(value reflect.Value, size int) string {
 	switch value.Kind() {
 	case reflect.Bool:
 		return "boolean"
@@ -41,7 +36,7 @@ func (s *postgres) SqlTag(value reflect.Value, size int) string {
 		}
 		return "text"
 	case reflect.Struct:
-		if _, ok := value.Interface().(time.Time); ok {
+		if value.Type() == timeType {
 			return "timestamp with time zone"
 		}
 	case reflect.Map:
@@ -67,12 +62,8 @@ func (s *postgres) PrimaryKeyTag(value reflect.Value, size int) string {
 	}
 }
 
-func (s *postgres) ReturningStr(tableName, key string) string {
-	return fmt.Sprintf("RETURNING %v.%v", s.Quote(tableName), key)
-}
-
-func (s *postgres) SelectFromDummyTable() string {
-	return ""
+func (s *postgres) ReturningStr(key string) string {
+	return fmt.Sprintf("RETURNING \"%v\"", key)
 }
 
 func (s *postgres) Quote(key string) string {
@@ -81,18 +72,21 @@ func (s *postgres) Quote(key string) string {
 
 func (s *postgres) HasTable(scope *Scope, tableName string) bool {
 	var count int
-	scope.NewDB().Raw("SELECT count(*) FROM INFORMATION_SCHEMA.tables WHERE table_name = ? AND table_type = 'BASE TABLE'", tableName).Row().Scan(&count)
+	newScope := scope.New(nil)
+	newScope.Raw(fmt.Sprintf("SELECT count(*) FROM INFORMATION_SCHEMA.tables where table_name = %v", newScope.AddToVars(tableName)))
+	newScope.DB().QueryRow(newScope.Sql, newScope.SqlVars...).Scan(&count)
 	return count > 0
 }
 
 func (s *postgres) HasColumn(scope *Scope, tableName string, columnName string) bool {
 	var count int
-	scope.NewDB().Raw("SELECT count(*) FROM information_schema.columns WHERE table_name = ? AND column_name = ?", tableName, columnName).Row().Scan(&count)
+	newScope := scope.New(nil)
+	newScope.Raw(fmt.Sprintf("SELECT count(*) FROM information_schema.columns WHERE table_name = %v AND column_name = %v",
+		newScope.AddToVars(tableName),
+		newScope.AddToVars(columnName),
+	))
+	newScope.DB().QueryRow(newScope.Sql, newScope.SqlVars...).Scan(&count)
 	return count > 0
-}
-
-func (s *postgres) RemoveIndex(scope *Scope, indexName string) {
-	scope.NewDB().Exec(fmt.Sprintf("DROP INDEX %v", indexName))
 }
 
 var hstoreType = reflect.TypeOf(Hstore{})

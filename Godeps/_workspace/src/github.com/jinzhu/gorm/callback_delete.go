@@ -1,9 +1,12 @@
 package gorm
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 func BeforeDelete(scope *Scope) {
-	scope.CallMethodWithErrorCheck("BeforeDelete")
+	scope.CallMethod("BeforeDelete")
 }
 
 func Delete(scope *Scope) {
@@ -12,7 +15,7 @@ func Delete(scope *Scope) {
 			scope.Raw(
 				fmt.Sprintf("UPDATE %v SET deleted_at=%v %v",
 					scope.QuotedTableName(),
-					scope.AddToVars(NowFunc()),
+					scope.AddToVars(time.Now()),
 					scope.CombinedConditionSql(),
 				))
 		} else {
@@ -24,7 +27,7 @@ func Delete(scope *Scope) {
 }
 
 func AfterDelete(scope *Scope) {
-	scope.CallMethodWithErrorCheck("AfterDelete")
+	scope.CallMethod("AfterDelete")
 }
 
 func init() {

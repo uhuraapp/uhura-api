@@ -4,8 +4,7 @@ import (
 	"database/sql/driver"
 	"encoding/binary"
 	"errors"
-	"fmt"
-	"sync"
+	"sync/atomic"
 )
 
 var (
@@ -49,10 +48,9 @@ type copyin struct {
 	rowData chan []byte
 	done    chan bool
 
-	closed bool
-
-	sync.Mutex // guards err
-	err        error
+	closed   bool
+	err      error
+	errorset int32
 }
 
 const ciBufferSize = 64 * 1024
@@ -61,6 +59,8 @@ const ciBufferSize = 64 * 1024
 const ciBufferFlushSize = 63 * 1024
 
 func (cn *conn) prepareCopyIn(q string) (_ driver.Stmt, err error) {
+	defer cn.errRecover(&err)
+
 	if !cn.isInTransaction() {
 		return nil, errCopyNotSupportedOutsideTxn
 	}
@@ -69,7 +69,7 @@ func (cn *conn) prepareCopyIn(q string) (_ driver.Stmt, err error) {
 		cn:      cn,
 		buffer:  make([]byte, 0, ciBufferSize),
 		rowData: make(chan []byte),
-		done:    make(chan bool, 1),
+		done:    make(chan bool),
 	}
 	// add CopyData identifier + 4 bytes for message length
 	ci.buffer = append(ci.buffer, 'd', 0, 0, 0, 0)
@@ -125,6 +125,8 @@ awaitCopyInResponse:
 			errorf("unknown response for CopyFail: %q", t)
 		}
 	}
+
+	panic("not reached")
 }
 
 func (ci *copyin) flush(buf []byte) {
@@ -139,48 +141,31 @@ func (ci *copyin) flush(buf []byte) {
 
 func (ci *copyin) resploop() {
 	for {
-		var r readBuf
-		t, err := ci.cn.recvMessage(&r)
-		if err != nil {
-			ci.cn.bad = true
-			ci.setError(err)
-			ci.done <- true
-			return
-		}
+		t, r := ci.cn.recv1()
 		switch t {
 		case 'C':
 			// complete
 		case 'Z':
-			ci.cn.processReadyForQuery(&r)
+			ci.cn.processReadyForQuery(r)
 			ci.done <- true
 			return
 		case 'E':
-			err := parseError(&r)
+			err := parseError(r)
 			ci.setError(err)
 		default:
 			ci.cn.bad = true
-			ci.setError(fmt.Errorf("unknown response during CopyIn: %q", t))
-			ci.done <- true
-			return
+			errorf("unknown response: %q", t)
 		}
 	}
 }
 
 func (ci *copyin) isErrorSet() bool {
-	ci.Lock()
-	isSet := (ci.err != nil)
-	ci.Unlock()
-	return isSet
+	return atomic.LoadInt32(&ci.errorset) != 0
 }
 
-// setError() sets ci.err if one has not been set already.  Caller must not be
-// holding ci.Mutex.
 func (ci *copyin) setError(err error) {
-	ci.Lock()
-	if ci.err == nil {
-		ci.err = err
-	}
-	ci.Unlock()
+	ci.err = err
+	atomic.StoreInt32(&ci.errorset, 1)
 }
 
 func (ci *copyin) NumInput() int {

@@ -465,7 +465,6 @@ func (c *conn) errRecover(err *error) {
 	case nil:
 		// Do nothing
 	case runtime.Error:
-		c.bad = true
 		panic(v)
 	case *Error:
 		if v.Fatal() {
@@ -483,7 +482,6 @@ func (c *conn) errRecover(err *error) {
 		}
 
 	default:
-		c.bad = true
 		panic(fmt.Sprintf("unknown error: %#v", e))
 	}
 

@@ -3,7 +3,6 @@ package pq
 import (
 	"bytes"
 	"encoding/binary"
-
 	"github.com/lib/pq/oid"
 )
 

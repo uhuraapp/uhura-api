@@ -2,78 +2,29 @@ package gorm
 
 import (
 	"database/sql"
-	"errors"
-	"fmt"
-	"reflect"
-	"strings"
-	"time"
 )
 
-// NowFunc returns current time, this function is exported in order to be able
-// to give the flexibility to the developer to customize it according to their
-// needs
-//
-//   e.g: return time.Now().UTC()
-//
-var NowFunc = func() time.Time {
-	return time.Now()
-}
-
 type DB struct {
-	Value             interface{}
-	Error             error
-	RowsAffected      int64
-	ModelStructs      map[reflect.Type]*ModelStruct
-	callback          *callback
-	db                sqlCommon
-	parent            *DB
-	search            *search
-	logMode           int
-	logger            logger
-	dialect           Dialect
-	singularTable     bool
-	source            string
-	values            map[string]interface{}
-	joinTableHandlers map[string]JoinTableHandler
+	Value         interface{}
+	Error         error
+	RowsAffected  int64
+	callback      *callback
+	db            sqlCommon
+	parent        *DB
+	search        *search
+	logMode       int
+	logger        logger
+	dialect       Dialect
+	tagIdentifier string
+	singularTable bool
+	source        string
 }
 
-func Open(dialect string, args ...interface{}) (DB, error) {
-	var db DB
+func Open(driver, source string) (DB, error) {
 	var err error
-
-	if len(args) == 0 {
-		err = errors.New("invalid database source")
-	} else {
-		var source string
-		var dbSql sqlCommon
-
-		switch value := args[0].(type) {
-		case string:
-			var driver = dialect
-			if len(args) == 1 {
-				source = value
-			} else if len(args) >= 2 {
-				driver = value
-				source = args[1].(string)
-			}
-			dbSql, err = sql.Open(driver, source)
-		case sqlCommon:
-			source = reflect.Indirect(reflect.ValueOf(value)).FieldByName("dsn").String()
-			dbSql = value
-		}
-
-		db = DB{
-			dialect:      NewDialect(dialect),
-			logger:       defaultLogger,
-			callback:     DefaultCallback,
-			source:       source,
-			values:       map[string]interface{}{},
-			db:           dbSql,
-			ModelStructs: map[reflect.Type]*ModelStruct{},
-		}
-		db.parent = &db
-	}
-
+	db := DB{dialect: NewDialect(driver), tagIdentifier: "sql", logger: defaultLogger, callback: DefaultCallback, source: source}
+	db.db, err = sql.Open(driver, source)
+	db.parent = &db
 	return db, err
 }
 
@@ -85,14 +36,7 @@ func (s *DB) DB() *sql.DB {
 	return s.db.(*sql.DB)
 }
 
-// NewScope create scope for callbacks, including DB's search information
-func (db *DB) NewScope(value interface{}) *Scope {
-	dbClone := db.clone()
-	dbClone.Value = value
-	return &Scope{db: dbClone, Search: dbClone.search, Value: value}
-}
-
-// CommonDB Return the underlying sql.DB or sql.Tx instance.
+// Return the underlying sql.DB or sql.Tx instance.
 // Use of this method is discouraged. It's mainly intended to allow
 // coexistence with legacy non-GORM code.
 func (s *DB) CommonDB() sqlCommon {
@@ -104,12 +48,16 @@ func (s *DB) Callback() *callback {
 	return s.parent.callback
 }
 
+func (s *DB) SetTagIdentifier(str string) {
+	s.parent.tagIdentifier = str
+}
+
 func (s *DB) SetLogger(l logger) {
 	s.parent.logger = l
 }
 
-func (s *DB) LogMode(enable bool) *DB {
-	if enable {
+func (s *DB) LogMode(b bool) *DB {
+	if b {
 		s.logMode = 2
 	} else {
 		s.logMode = 1
@@ -117,9 +65,8 @@ func (s *DB) LogMode(enable bool) *DB {
 	return s
 }
 
-func (s *DB) SingularTable(enable bool) {
-	s.parent.ModelStructs = map[reflect.Type]*ModelStruct{}
-	s.parent.singularTable = enable
+func (s *DB) SingularTable(b bool) {
+	s.parent.singularTable = b
 }
 
 func (s *DB) Where(query interface{}, args ...interface{}) *DB {
@@ -146,8 +93,8 @@ func (s *DB) Order(value string, reorder ...bool) *DB {
 	return s.clone().search.order(value, reorder...).db
 }
 
-func (s *DB) Select(query interface{}, args ...interface{}) *DB {
-	return s.clone().search.selects(query, args...).db
+func (s *DB) Select(value interface{}) *DB {
+	return s.clone().search.selects(value).db
 }
 
 func (s *DB) Group(query string) *DB {
@@ -162,11 +109,16 @@ func (s *DB) Joins(query string) *DB {
 	return s.clone().search.joins(query).db
 }
 
+func (s *DB) Includes(value interface{}) *DB {
+	return s.clone().search.includes(value).db
+}
+
 func (s *DB) Scopes(funcs ...func(*DB) *DB) *DB {
+	c := s
 	for _, f := range funcs {
-		s = f(s)
+		c = f(c)
 	}
-	return s
+	return c
 }
 
 func (s *DB) Unscoped() *DB {
@@ -182,17 +134,15 @@ func (s *DB) Assign(attrs ...interface{}) *DB {
 }
 
 func (s *DB) First(out interface{}, where ...interface{}) *DB {
-	newScope := s.clone().NewScope(out)
-	newScope.Search = newScope.Search.clone().limit(1)
-	return newScope.InstanceSet("gorm:order_by_primary_key", "ASC").
-		inlineCondition(where...).callCallbacks(s.parent.callback.queries).db
+	scope := s.clone().NewScope(out)
+	scope.Search = scope.Search.clone().order(scope.TableName() + "." + scope.PrimaryKey()).limit(1)
+	return scope.inlineCondition(where...).callCallbacks(s.parent.callback.queries).db
 }
 
 func (s *DB) Last(out interface{}, where ...interface{}) *DB {
-	newScope := s.clone().NewScope(out)
-	newScope.Search = newScope.Search.clone().limit(1)
-	return newScope.InstanceSet("gorm:order_by_primary_key", "DESC").
-		inlineCondition(where...).callCallbacks(s.parent.callback.queries).db
+	scope := s.clone().NewScope(out)
+	scope.Search = scope.Search.clone().order(scope.TableName() + "." + scope.PrimaryKey() + " DESC").limit(1)
+	return scope.inlineCondition(where...).callCallbacks(s.parent.callback.queries).db
 }
 
 func (s *DB) Find(out interface{}, where ...interface{}) *DB {
@@ -208,16 +158,17 @@ func (s *DB) Rows() (*sql.Rows, error) {
 }
 
 func (s *DB) Scan(dest interface{}) *DB {
-	scope := s.clone().NewScope(s.Value).InstanceSet("gorm:query_destination", dest)
+	scope := s.clone().NewScope(s.Value).Set("gorm:query_destination", dest)
 	Query(scope)
 	return scope.db
 }
 
 func (s *DB) FirstOrInit(out interface{}, where ...interface{}) *DB {
 	c := s.clone()
-	if result := c.First(out, where...); result.Error != nil {
-		if !result.RecordNotFound() {
-			return result
+	r := c.First(out, where...)
+	if r.Error != nil {
+		if !r.RecordNotFound() {
+			return r
 		}
 		c.NewScope(out).inlineCondition(where...).initialize()
 	} else {
@@ -228,13 +179,14 @@ func (s *DB) FirstOrInit(out interface{}, where ...interface{}) *DB {
 
 func (s *DB) FirstOrCreate(out interface{}, where ...interface{}) *DB {
 	c := s.clone()
-	if result := c.First(out, where...); result.Error != nil {
-		if !result.RecordNotFound() {
-			return result
+	r := c.First(out, where...)
+	if r.Error != nil {
+		if !r.RecordNotFound() {
+			return r
 		}
 		c.NewScope(out).inlineCondition(where...).initialize().callCallbacks(s.parent.callback.creates)
 	} else if len(c.search.AssignAttrs) > 0 {
-		c.NewScope(out).InstanceSet("gorm:update_interface", s.search.AssignAttrs).callCallbacks(s.parent.callback.updates)
+		c.NewScope(out).Set("gorm:update_interface", s.search.AssignAttrs).callCallbacks(s.parent.callback.updates)
 	}
 	return c
 }
@@ -245,8 +197,8 @@ func (s *DB) Update(attrs ...interface{}) *DB {
 
 func (s *DB) Updates(values interface{}, ignoreProtectedAttrs ...bool) *DB {
 	return s.clone().NewScope(s.Value).
+		Set("gorm:update_interface", values).
 		Set("gorm:ignore_protected_attrs", len(ignoreProtectedAttrs) > 0).
-		InstanceSet("gorm:update_interface", values).
 		callCallbacks(s.parent.callback.updates).db
 }
 
@@ -256,8 +208,8 @@ func (s *DB) UpdateColumn(attrs ...interface{}) *DB {
 
 func (s *DB) UpdateColumns(values interface{}) *DB {
 	return s.clone().NewScope(s.Value).
+		Set("gorm:update_interface", values).
 		Set("gorm:update_column", true).
-		InstanceSet("gorm:update_interface", values).
 		callCallbacks(s.parent.callback.updates).db
 }
 
@@ -265,8 +217,9 @@ func (s *DB) Save(value interface{}) *DB {
 	scope := s.clone().NewScope(value)
 	if scope.PrimaryKeyZero() {
 		return scope.callCallbacks(s.parent.callback.creates).db
+	} else {
+		return scope.callCallbacks(s.parent.callback.updates).db
 	}
-	return scope.callCallbacks(s.parent.callback.updates).db
 }
 
 func (s *DB) Create(value interface{}) *DB {
@@ -274,8 +227,8 @@ func (s *DB) Create(value interface{}) *DB {
 	return scope.callCallbacks(s.parent.callback.creates).db
 }
 
-func (s *DB) Delete(value interface{}, where ...interface{}) *DB {
-	return s.clone().NewScope(value).inlineCondition(where...).callCallbacks(s.parent.callback.deletes).db
+func (s *DB) Delete(value interface{}) *DB {
+	return s.clone().NewScope(value).callCallbacks(s.parent.callback.deletes).db
 }
 
 func (s *DB) Raw(sql string, values ...interface{}) *DB {
@@ -284,9 +237,7 @@ func (s *DB) Raw(sql string, values ...interface{}) *DB {
 
 func (s *DB) Exec(sql string, values ...interface{}) *DB {
 	scope := s.clone().NewScope(nil)
-	generatedSql := scope.buildWhereCondition(map[string]interface{}{"query": sql, "args": values})
-	generatedSql = strings.TrimSuffix(strings.TrimPrefix(generatedSql, "("), ")")
-	scope.Raw(generatedSql)
+	scope.Raw(scope.buildWhereCondition(map[string]interface{}{"query": sql, "args": values}))
 	return scope.Exec().db
 }
 
@@ -309,10 +260,7 @@ func (s *DB) Count(value interface{}) *DB {
 }
 
 func (s *DB) Table(name string) *DB {
-	clone := s.clone()
-	clone.search.table(name)
-	clone.Value = nil
-	return clone
+	return s.clone().search.table(name).db
 }
 
 func (s *DB) Debug() *DB {
@@ -366,22 +314,8 @@ func (s *DB) DropTable(value interface{}) *DB {
 	return s.clone().NewScope(value).dropTable().db
 }
 
-func (s *DB) DropTableIfExists(value interface{}) *DB {
-	return s.clone().NewScope(value).dropTableIfExists().db
-}
-
-func (s *DB) HasTable(value interface{}) bool {
-	scope := s.clone().NewScope(value)
-	tableName := scope.TableName()
-	return scope.Dialect().HasTable(scope, tableName)
-}
-
-func (s *DB) AutoMigrate(values ...interface{}) *DB {
-	db := s.clone()
-	for _, value := range values {
-		db = db.NewScope(value).NeedPtr().autoMigrate().db
-	}
-	return db
+func (s *DB) AutoMigrate(value interface{}) *DB {
+	return s.clone().NewScope(value).autoMigrate().db
 }
 
 func (s *DB) ModifyColumn(column string, typ string) *DB {
@@ -399,91 +333,12 @@ func (s *DB) AddIndex(indexName string, column ...string) *DB {
 	return s
 }
 
-/*
-Add foreign key to the given scope
-
-Example:
-	db.Model(&User{}).AddForeignKey("city_id", "cities(id)", "RESTRICT", "RESTRICT")
-*/
-func (s *DB) AddForeignKey(field string, dest string, onDelete string, onUpdate string) *DB {
-	s.clone().NewScope(s.Value).addForeignKey(field, dest, onDelete, onUpdate)
-	return s
-}
-
 func (s *DB) AddUniqueIndex(indexName string, column ...string) *DB {
 	s.clone().NewScope(s.Value).addIndex(true, indexName, column...)
 	return s
 }
 
-func (s *DB) RemoveIndex(indexName string) *DB {
-	s.clone().NewScope(s.Value).removeIndex(indexName)
+func (s *DB) RemoveIndex(column string) *DB {
+	s.clone().NewScope(s.Value).removeIndex(column)
 	return s
-}
-
-func (s *DB) Association(column string) *Association {
-	var err error
-	scope := s.clone().NewScope(s.Value)
-
-	if primaryField := scope.PrimaryKeyField(); primaryField.IsBlank {
-		err = errors.New("primary key can't be nil")
-	} else {
-		if field, ok := scope.FieldByName(column); ok {
-			if field.Relationship == nil || field.Relationship.ForeignFieldName == "" {
-				err = fmt.Errorf("invalid association %v for %v", column, scope.IndirectValue().Type())
-			} else {
-				return &Association{Scope: scope, Column: column, PrimaryKey: primaryField.Field.Interface(), Field: field}
-			}
-		} else {
-			err = fmt.Errorf("%v doesn't have column %v", scope.IndirectValue().Type(), column)
-		}
-	}
-
-	return &Association{Error: err}
-}
-
-func (s *DB) Preload(column string, conditions ...interface{}) *DB {
-	return s.clone().search.preload(column, conditions...).db
-}
-
-// Set set value by name
-func (s *DB) Set(name string, value interface{}) *DB {
-	return s.clone().InstantSet(name, value)
-}
-
-func (s *DB) InstantSet(name string, value interface{}) *DB {
-	s.values[name] = value
-	return s
-}
-
-// Get get value by name
-func (s *DB) Get(name string) (value interface{}, ok bool) {
-	value, ok = s.values[name]
-	return
-}
-
-func (s *DB) GetJoinTableHandler(table string) JoinTableHandler {
-	if s.parent.joinTableHandlers != nil {
-		if joinTableHandler, ok := s.parent.joinTableHandlers[table]; ok {
-			return joinTableHandler
-		}
-		if joinTableHandler, ok := s.parent.joinTableHandlers["*"]; ok {
-			return joinTableHandler
-		}
-	}
-	return DefaultJoinTableHandler
-}
-
-func (s *DB) SetJoinTableHandler(joinTableHandler JoinTableHandler, tables ...string) {
-	if s.parent.joinTableHandlers == nil {
-		s.parent.joinTableHandlers = map[string]JoinTableHandler{}
-	}
-
-	if len(tables) > 0 {
-		for _, table := range tables {
-			s.parent.joinTableHandlers[table] = joinTableHandler
-			s.Table(table).AutoMigrate(joinTableHandler)
-		}
-	} else {
-		s.parent.joinTableHandlers["*"] = joinTableHandler
-	}
 }

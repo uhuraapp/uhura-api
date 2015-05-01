@@ -22,13 +22,6 @@ import (
 	"time"
 )
 
-var (
-	errNoCodecs      = errors.New("securecookie: no codecs provided")
-	errHashKeyNotSet = errors.New("securecookie: hash key is not set")
-
-	ErrMacInvalid = errors.New("securecookie: the value is not valid")
-)
-
 // Codec defines an interface to encode and decode cookie values.
 type Codec interface {
 	Encode(name string, value interface{}) (string, error)
@@ -53,7 +46,7 @@ func New(hashKey, blockKey []byte) *SecureCookie {
 		maxLength: 4096,
 	}
 	if hashKey == nil {
-		s.err = errHashKeyNotSet
+		s.err = errors.New("securecookie: hash key is not set")
 	}
 	if blockKey != nil {
 		s.BlockFunc(aes.NewCipher)
@@ -137,7 +130,7 @@ func (s *SecureCookie) Encode(name string, value interface{}) (string, error) {
 		return "", s.err
 	}
 	if s.hashKey == nil {
-		s.err = errHashKeyNotSet
+		s.err = errors.New("securecookie: hash key is not set")
 		return "", s.err
 	}
 	var err error
@@ -181,7 +174,7 @@ func (s *SecureCookie) Decode(name, value string, dst interface{}) error {
 		return s.err
 	}
 	if s.hashKey == nil {
-		s.err = errHashKeyNotSet
+		s.err = errors.New("securecookie: hash key is not set")
 		return s.err
 	}
 	// 1. Check length.
@@ -196,7 +189,7 @@ func (s *SecureCookie) Decode(name, value string, dst interface{}) error {
 	// 3. Verify MAC. Value is "date|value|mac".
 	parts := bytes.SplitN(b, []byte("|"), 3)
 	if len(parts) != 3 {
-		return ErrMacInvalid
+		return errors.New("securecookie: invalid value %v")
 	}
 	h := hmac.New(s.hashFunc, s.hashKey)
 	b = append([]byte(name+"|"), b[:len(b)-len(parts[2])-1]...)
@@ -258,7 +251,7 @@ func verifyMac(h hash.Hash, value []byte, mac []byte) error {
 	if len(mac) == len(mac2) && subtle.ConstantTimeCompare(mac, mac2) == 1 {
 		return nil
 	}
-	return ErrMacInvalid
+	return errors.New("securecookie: the value is not valid")
 }
 
 // Encryption -----------------------------------------------------------------
@@ -340,9 +333,9 @@ func decode(value []byte) ([]byte, error) {
 
 // Helpers --------------------------------------------------------------------
 
-// GenerateRandomKey creates a random key with the given length in bytes.
-func GenerateRandomKey(length int) []byte {
-	k := make([]byte, length)
+// GenerateRandomKey creates a random key with the given strength.
+func GenerateRandomKey(strength int) []byte {
+	k := make([]byte, strength)
 	if _, err := io.ReadFull(rand.Reader, k); err != nil {
 		return nil
 	}
@@ -363,6 +356,8 @@ func CodecsFromPairs(keyPairs ...[]byte) []Codec {
 	}
 	return codecs
 }
+
+var errNoCodecs = errors.New("securecookie: no codecs provided")
 
 // EncodeMulti encodes a cookie value using a group of codecs.
 //

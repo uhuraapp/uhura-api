@@ -3,46 +3,40 @@ package gorm
 import (
 	"fmt"
 	"strings"
+	"time"
 )
 
 func BeforeCreate(scope *Scope) {
-	scope.CallMethodWithErrorCheck("BeforeSave")
-	scope.CallMethodWithErrorCheck("BeforeCreate")
+	scope.CallMethod("BeforeSave")
+	scope.CallMethod("BeforeCreate")
 }
 
 func UpdateTimeStampWhenCreate(scope *Scope) {
 	if !scope.HasError() {
-		now := NowFunc()
+		now := time.Now()
 		scope.SetColumn("CreatedAt", now)
 		scope.SetColumn("UpdatedAt", now)
 	}
 }
 
 func Create(scope *Scope) {
-	defer scope.Trace(NowFunc())
+	defer scope.Trace(time.Now())
 
 	if !scope.HasError() {
 		// set create sql
 		var sqls, columns []string
-		for _, field := range scope.Fields() {
-			if (field.IsNormal && !field.IsPrimaryKey) || (field.IsPrimaryKey && !field.IsBlank) {
-				if !field.IsBlank || !field.HasDefaultValue {
-					columns = append(columns, scope.Quote(field.DBName))
-					sqls = append(sqls, scope.AddToVars(field.Field.Interface()))
-				}
-			}
-		}
 
-		returningKey := "*"
-		primaryField := scope.PrimaryKeyField()
-		if primaryField != nil {
-			returningKey = scope.Quote(primaryField.DBName)
+		for _, field := range scope.Fields() {
+			if len(field.SqlTag) > 0 && !field.IsIgnored && (field.DBName != scope.PrimaryKey() || !scope.PrimaryKeyZero()) {
+				columns = append(columns, scope.Quote(field.DBName))
+				sqls = append(sqls, scope.AddToVars(field.Value))
+			}
 		}
 
 		if len(columns) == 0 {
 			scope.Raw(fmt.Sprintf("INSERT INTO %v DEFAULT VALUES %v",
 				scope.QuotedTableName(),
-				scope.Dialect().ReturningStr(scope.TableName(), returningKey),
+				scope.Dialect().ReturningStr(scope.PrimaryKey()),
 			))
 		} else {
 			scope.Raw(fmt.Sprintf(
@@ -50,36 +44,36 @@ func Create(scope *Scope) {
 				scope.QuotedTableName(),
 				strings.Join(columns, ","),
 				strings.Join(sqls, ","),
-				scope.Dialect().ReturningStr(scope.TableName(), returningKey),
+				scope.Dialect().ReturningStr(scope.PrimaryKey()),
 			))
 		}
 
 		// execute create sql
+		var id interface{}
 		if scope.Dialect().SupportLastInsertId() {
-			if result, err := scope.SqlDB().Exec(scope.Sql, scope.SqlVars...); scope.Err(err) == nil {
-				id, err := result.LastInsertId()
+			if result, err := scope.DB().Exec(scope.Sql, scope.SqlVars...); scope.Err(err) == nil {
+				id, err = result.LastInsertId()
 				if scope.Err(err) == nil {
-					scope.db.RowsAffected, _ = result.RowsAffected()
-					if primaryField != nil {
-						scope.Err(scope.SetColumn(primaryField, id))
+					if count, err := result.RowsAffected(); err == nil {
+						scope.db.RowsAffected = count
 					}
 				}
 			}
 		} else {
-			if primaryField == nil {
-				if results, err := scope.SqlDB().Exec(scope.Sql, scope.SqlVars...); err != nil {
-					scope.db.RowsAffected, _ = results.RowsAffected()
-				}
-			} else if scope.Err(scope.SqlDB().QueryRow(scope.Sql, scope.SqlVars...).Scan(primaryField.Field.Addr().Interface())) == nil {
+			if scope.Err(scope.DB().QueryRow(scope.Sql, scope.SqlVars...).Scan(&id)) == nil {
 				scope.db.RowsAffected = 1
 			}
+		}
+
+		if !scope.HasError() && scope.PrimaryKeyZero() {
+			scope.SetColumn(scope.PrimaryKey(), id)
 		}
 	}
 }
 
 func AfterCreate(scope *Scope) {
-	scope.CallMethodWithErrorCheck("AfterCreate")
-	scope.CallMethodWithErrorCheck("AfterSave")
+	scope.CallMethod("AfterCreate")
+	scope.CallMethod("AfterSave")
 }
 
 func init() {

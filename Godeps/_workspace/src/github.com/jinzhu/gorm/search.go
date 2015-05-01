@@ -1,19 +1,18 @@
 package gorm
 
-import "fmt"
+import "strconv"
 
 type search struct {
 	db              *DB
 	WhereConditions []map[string]interface{}
 	OrConditions    []map[string]interface{}
 	NotConditions   []map[string]interface{}
-	HavingCondition map[string]interface{}
 	InitAttrs       []interface{}
 	AssignAttrs     []interface{}
-	Selects         map[string]interface{}
+	HavingCondition map[string]interface{}
 	Orders          []string
 	Joins           string
-	Preload         map[string][]interface{}
+	Select          string
 	Offset          string
 	Limit           string
 	Group           string
@@ -24,21 +23,20 @@ type search struct {
 
 func (s *search) clone() *search {
 	return &search{
-		Preload:         s.Preload,
 		WhereConditions: s.WhereConditions,
 		OrConditions:    s.OrConditions,
 		NotConditions:   s.NotConditions,
-		HavingCondition: s.HavingCondition,
 		InitAttrs:       s.InitAttrs,
 		AssignAttrs:     s.AssignAttrs,
-		Selects:         s.Selects,
+		HavingCondition: s.HavingCondition,
 		Orders:          s.Orders,
-		Joins:           s.Joins,
+		Select:          s.Select,
 		Offset:          s.Offset,
 		Limit:           s.Limit,
-		Group:           s.Group,
-		TableName:       s.TableName,
 		Unscope:         s.Unscope,
+		Group:           s.Group,
+		Joins:           s.Joins,
+		TableName:       s.TableName,
 		Raw:             s.Raw,
 	}
 }
@@ -77,8 +75,8 @@ func (s *search) order(value string, reorder ...bool) *search {
 	return s
 }
 
-func (s *search) selects(query interface{}, args ...interface{}) *search {
-	s.Selects = map[string]interface{}{"query": query, "args": args}
+func (s *search) selects(value interface{}) *search {
+	s.Select = s.getInterfaceAsSql(value)
 	return s
 }
 
@@ -102,16 +100,12 @@ func (s *search) having(query string, values ...interface{}) *search {
 	return s
 }
 
-func (s *search) joins(query string) *search {
-	s.Joins = query
+func (s *search) includes(value interface{}) *search {
 	return s
 }
 
-func (s *search) preload(column string, values ...interface{}) *search {
-	if s.Preload == nil {
-		s.Preload = map[string][]interface{}{}
-	}
-	s.Preload[column] = values
+func (s *search) joins(query string) *search {
+	s.Joins = query
 	return s
 }
 
@@ -131,15 +125,17 @@ func (s *search) table(name string) *search {
 }
 
 func (s *search) getInterfaceAsSql(value interface{}) (str string) {
-	switch value.(type) {
-	case string, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
-		str = fmt.Sprintf("%v", value)
+	switch value := value.(type) {
+	case string:
+		str = value
+	case int:
+		if value < 0 {
+			str = ""
+		} else {
+			str = strconv.Itoa(value)
+		}
 	default:
 		s.db.err(InvalidSql)
-	}
-
-	if str == "-1" {
-		return ""
 	}
 	return
 }

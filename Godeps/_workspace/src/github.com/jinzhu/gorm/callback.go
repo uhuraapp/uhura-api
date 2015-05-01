@@ -9,10 +9,10 @@ type callback struct {
 	updates    []*func(scope *Scope)
 	deletes    []*func(scope *Scope)
 	queries    []*func(scope *Scope)
-	processors []*callbackProcessor
+	processors []*callback_processor
 }
 
-type callbackProcessor struct {
+type callback_processor struct {
 	name      string
 	before    string
 	after     string
@@ -23,63 +23,55 @@ type callbackProcessor struct {
 	callback  *callback
 }
 
-func (c *callback) addProcessor(typ string) *callbackProcessor {
-	cp := &callbackProcessor{typ: typ, callback: c}
+func (c *callback) addProcessor(typ string) *callback_processor {
+	cp := &callback_processor{typ: typ, callback: c}
 	c.processors = append(c.processors, cp)
 	return cp
 }
 
 func (c *callback) clone() *callback {
-	return &callback{
-		creates:    c.creates,
-		updates:    c.updates,
-		deletes:    c.deletes,
-		queries:    c.queries,
-		processors: c.processors,
-	}
+	return &callback{processors: c.processors}
 }
 
-func (c *callback) Create() *callbackProcessor {
+func (c *callback) Create() *callback_processor {
 	return c.addProcessor("create")
 }
 
-func (c *callback) Update() *callbackProcessor {
+func (c *callback) Update() *callback_processor {
 	return c.addProcessor("update")
 }
 
-func (c *callback) Delete() *callbackProcessor {
+func (c *callback) Delete() *callback_processor {
 	return c.addProcessor("delete")
 }
 
-func (c *callback) Query() *callbackProcessor {
+func (c *callback) Query() *callback_processor {
 	return c.addProcessor("query")
 }
 
-func (cp *callbackProcessor) Before(name string) *callbackProcessor {
+func (cp *callback_processor) Before(name string) *callback_processor {
 	cp.before = name
 	return cp
 }
 
-func (cp *callbackProcessor) After(name string) *callbackProcessor {
+func (cp *callback_processor) After(name string) *callback_processor {
 	cp.after = name
 	return cp
 }
 
-func (cp *callbackProcessor) Register(name string, fc func(scope *Scope)) {
+func (cp *callback_processor) Register(name string, fc func(scope *Scope)) {
 	cp.name = name
 	cp.processor = &fc
 	cp.callback.sort()
 }
 
-func (cp *callbackProcessor) Remove(name string) {
-	fmt.Printf("[info] removing callback `%v` from %v\n", name, fileWithLineNum())
+func (cp *callback_processor) Remove(name string) {
 	cp.name = name
 	cp.remove = true
 	cp.callback.sort()
 }
 
-func (cp *callbackProcessor) Replace(name string, fc func(scope *Scope)) {
-	fmt.Printf("[info] replacing callback `%v` from %v\n", name, fileWithLineNum())
+func (cp *callback_processor) Replace(name string, fc func(scope *Scope)) {
 	cp.name = name
 	cp.processor = &fc
 	cp.replace = true
@@ -95,20 +87,24 @@ func getRIndex(strs []string, str string) int {
 	return -1
 }
 
-func sortProcessors(cps []*callbackProcessor) []*func(scope *Scope) {
-	var sortCallbackProcessor func(c *callbackProcessor)
+func sortProcessors(cps []*callback_processor) []*func(scope *Scope) {
+	var sortCallbackProcessor func(c *callback_processor, force bool)
 	var names, sortedNames = []string{}, []string{}
 
 	for _, cp := range cps {
 		if index := getRIndex(names, cp.name); index > -1 {
-			if !cp.replace && !cp.remove {
+			if cp.replace {
+				fmt.Printf("[info] replacing callback `%v` from %v\n", cp.name, fileWithLineNum())
+			} else if cp.remove {
+				fmt.Printf("[info] removing callback `%v` from %v\n", cp.name, fileWithLineNum())
+			} else {
 				fmt.Printf("[warning] duplicated callback `%v` from %v\n", cp.name, fileWithLineNum())
 			}
 		}
 		names = append(names, cp.name)
 	}
 
-	sortCallbackProcessor = func(c *callbackProcessor) {
+	sortCallbackProcessor = func(c *callback_processor, force bool) {
 		if getRIndex(sortedNames, c.name) > -1 {
 			return
 		}
@@ -118,7 +114,7 @@ func sortProcessors(cps []*callbackProcessor) []*func(scope *Scope) {
 				sortedNames = append(sortedNames[:index], append([]string{c.name}, sortedNames[index:]...)...)
 			} else if index := getRIndex(names, c.before); index > -1 {
 				sortedNames = append(sortedNames, c.name)
-				sortCallbackProcessor(cps[index])
+				sortCallbackProcessor(cps[index], true)
 			} else {
 				sortedNames = append(sortedNames, c.name)
 			}
@@ -132,19 +128,19 @@ func sortProcessors(cps []*callbackProcessor) []*func(scope *Scope) {
 				if len(cp.before) == 0 {
 					cp.before = c.name
 				}
-				sortCallbackProcessor(cp)
+				sortCallbackProcessor(cp, true)
 			} else {
 				sortedNames = append(sortedNames, c.name)
 			}
 		}
 
-		if getRIndex(sortedNames, c.name) == -1 {
+		if getRIndex(sortedNames, c.name) == -1 && force {
 			sortedNames = append(sortedNames, c.name)
 		}
 	}
 
 	for _, cp := range cps {
-		sortCallbackProcessor(cp)
+		sortCallbackProcessor(cp, false)
 	}
 
 	var funcs = []*func(scope *Scope){}
@@ -168,7 +164,7 @@ func sortProcessors(cps []*callbackProcessor) []*func(scope *Scope) {
 }
 
 func (c *callback) sort() {
-	creates, updates, deletes, queries := []*callbackProcessor{}, []*callbackProcessor{}, []*callbackProcessor{}, []*callbackProcessor{}
+	creates, updates, deletes, queries := []*callback_processor{}, []*callback_processor{}, []*callback_processor{}, []*callback_processor{}
 
 	for _, processor := range c.processors {
 		switch processor.typ {
@@ -189,4 +185,4 @@ func (c *callback) sort() {
 	c.queries = sortProcessors(queries)
 }
 
-var DefaultCallback = &callback{processors: []*callbackProcessor{}}
+var DefaultCallback = &callback{processors: []*callback_processor{}}

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-	"time"
 )
 
 type commonDialect struct{}
@@ -17,11 +16,7 @@ func (s *commonDialect) SupportLastInsertId() bool {
 	return true
 }
 
-func (s *commonDialect) HasTop() bool {
-	return false
-}
-
-func (s *commonDialect) SqlTag(value reflect.Value, size int) string {
+func (d *commonDialect) SqlTag(value reflect.Value, size int) string {
 	switch value.Kind() {
 	case reflect.Bool:
 		return "BOOLEAN"
@@ -34,40 +29,38 @@ func (s *commonDialect) SqlTag(value reflect.Value, size int) string {
 	case reflect.String:
 		if size > 0 && size < 65532 {
 			return fmt.Sprintf("VARCHAR(%d)", size)
+		} else {
+			return "VARCHAR(65532)"
 		}
-		return "VARCHAR(65532)"
 	case reflect.Struct:
-		if _, ok := value.Interface().(time.Time); ok {
+		if value.Type() == timeType {
 			return "TIMESTAMP"
 		}
 	default:
 		if _, ok := value.Interface().([]byte); ok {
 			if size > 0 && size < 65532 {
 				return fmt.Sprintf("BINARY(%d)", size)
+			} else {
+				return "BINARY(65532)"
 			}
-			return "BINARY(65532)"
 		}
 	}
 	panic(fmt.Sprintf("invalid sql type %s (%s) for commonDialect", value.Type().Name(), value.Kind().String()))
 }
 
 func (s *commonDialect) PrimaryKeyTag(value reflect.Value, size int) string {
-	suffix := " NOT NULL PRIMARY KEY"
+	suffix_str := " NOT NULL PRIMARY KEY"
 	switch value.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uintptr:
-		return "INTEGER" + suffix
+		return "INTEGER" + suffix_str
 	case reflect.Int64, reflect.Uint64:
-		return "BIGINT" + suffix
+		return "BIGINT" + suffix_str
 	default:
 		panic("Invalid primary key type")
 	}
 }
 
-func (s *commonDialect) ReturningStr(tableName, key string) string {
-	return ""
-}
-
-func (s *commonDialect) SelectFromDummyTable() string {
+func (s *commonDialect) ReturningStr(key string) string {
 	return ""
 }
 
@@ -86,16 +79,22 @@ func (s *commonDialect) databaseName(scope *Scope) string {
 
 func (s *commonDialect) HasTable(scope *Scope, tableName string) bool {
 	var count int
-	scope.NewDB().Raw("SELECT count(*) FROM INFORMATION_SCHEMA.tables WHERE table_name = ? AND table_schema = ?", tableName, s.databaseName(scope)).Row().Scan(&count)
+	newScope := scope.New(nil)
+	newScope.Raw(fmt.Sprintf("SELECT count(*) FROM INFORMATION_SCHEMA.tables where table_name = %v AND table_schema = %v",
+		newScope.AddToVars(tableName),
+		newScope.AddToVars(s.databaseName(scope))))
+	newScope.DB().QueryRow(newScope.Sql, newScope.SqlVars...).Scan(&count)
 	return count > 0
 }
 
 func (s *commonDialect) HasColumn(scope *Scope, tableName string, columnName string) bool {
 	var count int
-	scope.NewDB().Raw("SELECT count(*) FROM information_schema.columns WHERE table_schema = ? AND table_name = ? AND column_name = ?", s.databaseName(scope), tableName, columnName).Row().Scan(&count)
+	newScope := scope.New(nil)
+	newScope.Raw(fmt.Sprintf("SELECT count(*) FROM information_schema.columns WHERE table_schema = %v AND table_name = %v AND column_name = %v",
+		newScope.AddToVars(s.databaseName(scope)),
+		newScope.AddToVars(tableName),
+		newScope.AddToVars(columnName),
+	))
+	newScope.DB().QueryRow(newScope.Sql, newScope.SqlVars...).Scan(&count)
 	return count > 0
-}
-
-func (s *commonDialect) RemoveIndex(scope *Scope, indexName string) {
-	scope.NewDB().Exec(fmt.Sprintf("DROP INDEX %v ON %v", indexName, scope.QuotedTableName()))
 }

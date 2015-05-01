@@ -14,8 +14,13 @@
 		},
 		{
 			"ImportPath": "code.google.com/p/go.crypto/bcrypt",
-			"Comment": "null-236",
-			"Rev": "69e2a90ed92d03812364aeb947b7068dc42e561e"
+			"Comment": "null-191",
+			"Rev": "7aa593ce8ceaf0199504fff27455bbb60eedabc7"
+		},
+		{
+			"ImportPath": "code.google.com/p/go.crypto/blowfish",
+			"Comment": "null-191",
+			"Rev": "7aa593ce8ceaf0199504fff27455bbb60eedabc7"
 		},
 		{
 			"ImportPath": "code.google.com/p/goauth2/oauth",
@@ -23,8 +28,17 @@
 			"Rev": "afe77d958c701557ec5dc56f6936fcc194d15520"
 		},
 		{
+			"ImportPath": "github.com/PuerkitoBio/goquery",
+			"Comment": "v0.3.2-74-g5203bc0",
+			"Rev": "5203bc06dacf2192e0f4a9879010b9f14c861d14"
+		},
+		{
+			"ImportPath": "github.com/andybalholm/cascadia",
+			"Rev": "54abbbf07a45a3ef346ebe903e0715d9a3c19352"
+		},
+		{
 			"ImportPath": "github.com/dchest/uniuri",
-			"Rev": "87c54b9ba5a02ac5745160d06820ae9094db7b6f"
+			"Rev": "bc4af7603a3e0ce9d58009f82fca481555182e1c"
 		},
 		{
 			"ImportPath": "github.com/dukex/login2",
@@ -45,27 +59,27 @@
 		},
 		{
 			"ImportPath": "github.com/gorilla/context",
-			"Rev": "215affda49addc4c8ef7e2534915df2c8c35c6cd"
+			"Rev": "14f550f51af52180c2eefed15e5fd18d63c0a64a"
 		},
 		{
 			"ImportPath": "github.com/gorilla/securecookie",
-			"Rev": "5f171f42328bdd573211bb82bdee8f259c4c61ae"
+			"Rev": "155134204c034796bcd7a72c1e1b53ba005735c6"
 		},
 		{
 			"ImportPath": "github.com/gorilla/sessions",
-			"Rev": "1f45645972a051deb63c8e8e3c594041a6145e35"
+			"Rev": "1ace0650f7b7ebbf58eb835609698352efeb9cc9"
 		},
 		{
 			"ImportPath": "github.com/jinzhu/gorm",
-			"Rev": "61a878dc2db933e665471741005a2ce8730f715c"
+			"Rev": "11bfaba497a2aa5752c30705ea528d18fe68c73d"
 		},
 		{
 			"ImportPath": "github.com/jteeuwen/go-pkg-rss",
-			"Rev": "5576b8d83ed75cbb4bc43ef18c07414f880b3472"
+			"Rev": "2b6dc03edeb0bb531e0d85dd973e8ac0d7187884"
 		},
 		{
 			"ImportPath": "github.com/jteeuwen/go-pkg-xmlx",
-			"Rev": "cf505b97c711dd1c5a4682f68ea04dd35e385b8f"
+			"Rev": "3623786eeb421657b11acad4aa1a9b89683c031f"
 		},
 		{
 			"ImportPath": "github.com/julienschmidt/httprouter",
@@ -73,16 +87,15 @@
 		},
 		{
 			"ImportPath": "github.com/lib/pq",
-			"Comment": "go1.0-cutoff-28-g72d960f",
-			"Rev": "72d960fe96ac86dfd376b0de7ca81c0334838d0b"
+			"Rev": "c6325123e6d45115749734a8bc35060ebac74d0e"
 		},
 		{
 			"ImportPath": "github.com/op/go-logging",
 			"Rev": "e5fb9bb8a3a168cc269b38f092b65d2e18cebb9a"
 		},
 		{
-			"ImportPath": "golang.org/x/crypto/blowfish",
-			"Rev": "1351f936d976c60a0a48d728281922cf63eafb8d"
+			"ImportPath": "golang.org/x/net/html",
+			"Rev": "84ba27dd5b2d8135e9da1395277f2c9333a2ffda"
 		}
 	]
 }

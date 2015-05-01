@@ -127,9 +127,8 @@ func (l *ListenerConn) setState(newState int32) bool {
 func (l *ListenerConn) listenerConnLoop() (err error) {
 	defer l.cn.errRecover(&err)
 
-	r := &readBuf{}
 	for {
-		t, err := l.cn.recvMessage(r)
+		t, r, err := l.cn.recvMessage()
 		if err != nil {
 			return err
 		}
@@ -170,6 +169,8 @@ func (l *ListenerConn) listenerConnLoop() (err error) {
 			return fmt.Errorf("unexpected message %q from server in listenerConnLoop", t)
 		}
 	}
+
+	panic("not reached")
 }
 
 // This is the main routine for the goroutine receiving on the database
@@ -316,6 +317,8 @@ func (l *ListenerConn) ExecSimpleQuery(q string) (executed bool, err error) {
 			return false, fmt.Errorf("unknown response for simple query: %q", m.typ)
 		}
 	}
+
+	panic("not reached")
 }
 
 func (l *ListenerConn) Close() error {
@@ -422,13 +425,6 @@ func NewListener(name string,
 	go l.listenerMain()
 
 	return l
-}
-
-// Returns the notification channel for this listener.  This is the same
-// channel as Notify, and will not be recreated during the life time of the
-// Listener.
-func (l *Listener) NotificationChannel() <-chan *Notification {
-	return l.Notify
 }
 
 // Listen starts listening for notifications on a channel.  Calls to this
@@ -634,6 +630,8 @@ func (l *Listener) resync(cn *ListenerConn, notificationChan <-chan *Notificatio
 			return err
 		}
 	}
+
+	panic("not reached")
 }
 
 // caller should NOT be holding l.lock

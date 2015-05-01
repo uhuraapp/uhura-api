@@ -2,23 +2,42 @@
 
 The fantastic ORM library for Golang, aims to be developer friendly.
 
-[![wercker status](https://app.wercker.com/status/0cb7bb1039e21b74f8274941428e0921/s/master "wercker status")](https://app.wercker.com/project/bykey/0cb7bb1039e21b74f8274941428e0921)
-
 ## Overview
 
-* Full-Featured ORM (almost)
 * Chainable API
-* Auto Migrations
-* Relations (Has One, Has Many, Belongs To, Many To Many, [Polymorphism](#polymorphism))
-* Callbacks (Before/After Create/Save/Update/Delete/Find)
-* Preloading (eager loading)
-* Transactions
-* Embed Anonymous Struct
+* Relations
+* Callbacks (before/after create/save/update/delete/find)
 * Soft Deletes
+* Auto Migrations
+* Transactions
 * Customizable Logger
 * Iteration Support via [Rows](#row--rows)
+* Scopes
+* sql.Scanner support
 * Every feature comes with tests
+* Convention Over Configuration
 * Developer Friendly
+
+## Conventions
+
+* Table name is the plural of struct name's snake case, you can disable pluralization with `db.SingularTable(true)`, or [Specifying The Table Name For A Struct Permanently With TableName](#specifying-the-table-name-for-a-struct-permanently-with-tablename)
+
+```go
+// E.g finding an existing User
+var user User
+// Gorm will know to use table "users" ("user" if pluralisation has been disabled) for all operations.
+db.First(&user)
+
+// creating a new User
+DB.Save(&User{Name: "xxx"}) // table "users"
+```
+
+* Column name is the snake case of field's name
+* Use `Id` field as primary key
+* Use tag `sql` to change field's property, change the tag name with `db.SetTagIdentifier(new_name)`
+* Use `CreatedAt` to store record's created time if field exists
+* Use `UpdatedAt` to store record's updated time if field exists
+* Use `DeletedAt` to store record's deleted time if field exists [Soft Delete](#soft-delete)
 
 # Getting Started
 
@@ -32,81 +51,51 @@ go get -u github.com/jinzhu/gorm
 
 ```go
 type User struct {
-	ID           int
-	Birthday     time.Time
-	Age          int
-	Name         string  `sql:"size:255"`
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-	DeletedAt    time.Time
+    Id           int64
+    Birthday     time.Time
+    Age          int64
+    Name         string  `sql:"size:255"`
+    CreatedAt    time.Time
+    UpdatedAt    time.Time
+    DeletedAt    time.Time
 
-	Emails            []Email         // One-To-Many relationship (has many)
-	BillingAddress    Address         // One-To-One relationship (has one)
-	BillingAddressID  sql.NullInt64   // Foreign key of BillingAddress
-	ShippingAddress   Address         // One-To-One relationship (has one)
-	ShippingAddressID int             // Foreign key of ShippingAddress
-	IgnoreMe          int `sql:"-"`   // Ignore this field
-	Languages         []Language `gorm:"many2many:user_languages;"` // Many-To-Many relationship, 'user_languages' is join table
+    Emails            []Email         // Embedded structs (has many)
+    BillingAddress    Address         // Embedded struct (has one)
+    BillingAddressId  sql.NullInt64   // Foreign key of BillingAddress
+    ShippingAddress   Address         // Embedded struct (has one)
+    ShippingAddressId int64           // Foreign key of ShippingAddress
+    IgnoreMe          int64 `sql:"-"` // Ignore this field
 }
 
 type Email struct {
-	ID         int
-	UserID     int     // Foreign key for User (belongs to)
-	Email      string  `sql:"type:varchar(100);"` // Set field's type
-	Subscribed bool
+    Id         int64
+    UserId     int64   // Foreign key for User (belongs to)
+    Email      string  `sql:"type:varchar(100);"` // Set field's type
+    Subscribed bool
 }
 
 type Address struct {
-	ID       int
-	Address1 string         `sql:"not null;unique"` // Set field as not nullable and unique
-	Address2 string         `sql:"type:varchar(100);unique"`
-	Post     sql.NullString `sql:not null`
-}
-
-type Language struct {
-	ID   int
-	Name string
+    Id       int64
+    Address1 string         `sql:"not null;unique"` // Set field as not nullable and unique
+    Address2 string         `sql:"type:varchar(100);unique"`
+    Post     sql.NullString `sql:not null`
 }
 ```
-
-## Conventions
-
-* Table name is the plural of struct name's snake case, you can disable pluralization with `db.SingularTable(true)`, or [Specifying The Table Name For A Struct Permanently With TableName](#specifying-the-table-name-for-a-struct-permanently-with-tablename)
-
-```go
-// E.g finding an existing User
-var user User
-// Gorm will know to use table "users" ("user" if pluralisation has been disabled) for all operations.
-db.First(&user)
-
-// creating a new User
-db.Save(&User{Name: "xxx"}) // table "users"
-```
-
-* Column name is the snake case of field's name
-* Use `ID` field as primary key
-* Use `CreatedAt` to store record's created time if field exists
-* Use `UpdatedAt` to store record's updated time if field exists
-* Use `DeletedAt` to store record's deleted time if field exists [Soft Delete](#soft-delete)
 
 ## Initialize Database
 
 ```go
 
 import (
-	"github.com/jinzhu/gorm"
-	_ "github.com/lib/pq"
-	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/mattn/go-sqlite3"
+    "github.com/jinzhu/gorm"
+    _ "github.com/lib/pq"
+    _ "github.com/go-sql-driver/mysql"
+    _ "github.com/mattn/go-sqlite3"
 )
 
 db, err := gorm.Open("postgres", "user=gorm dbname=gorm sslmode=disable")
-// db, err := gorm.Open("mysql", "user:password@/dbname?charset=utf8&parseTime=True")
+// db, err := gorm.Open("mysql", "gorm:gorm@/gorm?charset=utf8&parseTime=True")
 // db, err := gorm.Open("sqlite3", "/tmp/gorm.db")
-
-// You can also use an existing database connection handle
-// dbSql, _ := sql.Open("postgres", "user=gorm dbname=gorm sslmode=disable")
-// db := gorm.Open("postgres", dbSql)
 
 // Get database connection handle [*sql.DB](http://golang.org/pkg/database/sql/#DB)
 db.DB()
@@ -124,43 +113,32 @@ db.SingularTable(true)
 
 ```go
 // Create table
-db.CreateTable(&User{})
+db.CreateTable(User{})
 
 // Drop table
-db.DropTable(&User{})
-
-// Drop table if exists
-db.DropTableIfExists(&User{})
+db.DropTable(User{})
 
 // Automating Migration
-db.AutoMigrate(&User{})
-db.AutoMigrate(&User{}, &Product{}, &Order{})
+db.AutoMigrate(User{})
 
 // Feel free to change your struct, AutoMigrate will keep your database up-to-date.
 // Fyi, AutoMigrate will only *add new columns*, it won't update column's type or delete unused columns, to make sure your data is safe.
 // If the table is not existing, AutoMigrate will create the table automatically.
 
 // Add index
-db.Model(&User{}).AddIndex("idx_user_name", "name")
-
-// Add foreign key
-// 1st param : foreignkey field
-// 2nd param : destination table(id)
-// 3rd param : ONDELETE
-// 4th param : ONUPDATE
-db.Model(&User{}).AddForeignKey("user_id", "destination_table(id)", "CASCADE", "RESTRICT")
+db.Model(User{}).AddIndex("idx_user_name", "name")
 
 // Multiple column index
-db.Model(&User{}).AddIndex("idx_user_name_age", "name", "age")
+db.Model(User{}).AddIndex("idx_user_name_age", "name", "age")
 
 // Add unique index
-db.Model(&User{}).AddUniqueIndex("idx_user_name", "name")
+db.Model(User{}).AddUniqueIndex("idx_user_name", "name")
 
 // Multiple column unique index
-db.Model(&User{}).AddUniqueIndex("idx_user_name_age", "name", "age")
+db.Model(User{}).AddUniqueIndex("idx_user_name_age", "name", "age")
 
 // Remove index
-db.Model(&User{}).RemoveIndex("idx_user_name")
+db.Model(User{}).RemoveIndex("idx_user_name")
 ```
 
 # Basic CRUD
@@ -175,7 +153,7 @@ db.NewRecord(user) // => true
 
 db.Create(&user)
 
-// will return false after `user` created
+// will ruturn false after `user` created
 db.NewRecord(user) // => false
 
 // You could use `Save` to create record also if its primary key is null
@@ -183,11 +161,10 @@ db.Save(&user)
 
 // Associations will be saved automatically when insert the record
 user := User{
-	Name:            "jinzhu",
-	BillingAddress:  Address{Address1: "Billing Address - Address 1"},
-	ShippingAddress: Address{Address1: "Shipping Address - Address 1"},
-	Emails:          []Email{{Email: "jinzhu@example.com"}, {Email: "jinzhu-2@example@example.com"}},
-	Languages:       []Language{{Name: "ZH"}, {Name: "EN"}},
+        Name:            "jinzhu",
+        BillingAddress:  Address{Address1: "Billing Address - Address 1"},
+        ShippingAddress: Address{Address1: "Shipping Address - Address 1"},
+        Emails:          []Email{{Email: "jinzhu@example.com"}, {Email: "jinzhu-2@example@example.com"}},
 }
 
 db.Create(&user)
@@ -197,14 +174,10 @@ db.Create(&user)
 //// INSERT INTO "users" (name,billing_address_id,shipping_address_id) VALUES ("jinzhu", 1, 2);
 //// INSERT INTO "emails" (user_id,email) VALUES (111, "jinzhu@example.com");
 //// INSERT INTO "emails" (user_id,email) VALUES (111, "jinzhu-2@example.com");
-//// INSERT INTO "languages" ("name") VALUES ('ZH');
-//// INSERT INTO user_languages ("user_id","language_id") VALUES (111, 1);
-//// INSERT INTO "languages" ("name") VALUES ('EN');
-//// INSERT INTO user_languages ("user_id","language_id") VALUES (111, 2);
 //// COMMIT;
 ```
 
-Refer [Associations](#associations) for how to work with associations
+Refer [Query With Related](#query-with-related) for how to find associations
 
 ## Query
 
@@ -328,6 +301,21 @@ db.Where("name = 'jinzhu'").Or(User{Name: "jinzhu 2"}).Find(&users)
 db.Where("name = 'jinzhu'").Or(map[string]interface{}{"name": "jinzhu 2"}).Find(&users)
 ```
 
+### Query With Related
+
+```go
+// Find associations with guessed foreign key
+db.Model(&user).Related(&emails)
+//// SELECT * FROM emails WHERE user_id = 111; // 111 is user's Id
+
+db.Model(&email).Related(&user)
+//// SELECT * FROM users WHERE id = 111; // 111 is email's UserId
+
+// Find associations with specified foreign key
+db.Model(&user).Related(&address1, "BillingAddressId")
+//// SELECT * FROM addresses WHERE id = 123; // 123 is user's BillingAddressId
+```
+
 ### Query Chains
 
 Gorm has a chainable API, you could use it like this
@@ -337,28 +325,6 @@ db.Where("name <> ?","jinzhu").Where("age >= ? and role <> ?",20,"admin").Find(&
 //// SELECT * FROM users WHERE name <> 'jinzhu' AND age >= 20 AND role <> 'admin';
 
 db.Where("role = ?", "admin").Or("role = ?", "super_admin").Not("name = ?", "jinzhu").Find(&users)
-```
-
-### Preloading (Eager loading)
-
-```go
-db.Preload("Orders").Find(&users)
-//// SELECT * FROM users;
-//// SELECT * FROM orders WHERE user_id IN (1,2,3,4);
-
-db.Preload("Orders", "state NOT IN (?)", "cancelled").Find(&users)
-//// SELECT * FROM users;
-//// SELECT * FROM orders WHERE user_id IN (1,2,3,4) AND state NOT IN ('cancelled');
-
-db.Where("state = ?", "active").Preload("Orders", "state NOT IN (?)", "cancelled").Find(&users)
-//// SELECT * FROM users WHERE state = 'active';
-//// SELECT * FROM orders WHERE user_id IN (1,2) AND state NOT IN ('cancelled');
-
-db.Preload("Orders").Preload("Profile").Preload("Role").Find(&users)
-//// SELECT * FROM users;
-//// SELECT * FROM orders WHERE user_id IN (1,2,3,4); // has many
-//// SELECT * FROM profiles WHERE user_id IN (1,2,3,4); // has one
-//// SELECT * FROM roles WHERE id IN (4,5,6); // belongs to
 ```
 
 ## Update
@@ -371,15 +337,9 @@ user.Age = 100
 db.Save(&user)
 //// UPDATE users SET name='jinzhu 2', age=100, updated_at = '2013-11-17 21:34:10' WHERE id=111;
 
-db.Where("active = ?", true).Save(&user)
-//// UPDATE users SET name='jinzhu 2', age=100, updated_at = '2013-11-17 21:34:10' WHERE id=111 AND active = true;
-
 // Update an attribute if it is changed
 db.Model(&user).Update("name", "hello")
 //// UPDATE users SET name='hello', updated_at = '2013-11-17 21:34:10' WHERE id=111;
-
-db.Model(&user).Where("active = ?", true).Update("name", "hello")
-//// UPDATE users SET name='hello', updated_at = '2013-11-17 21:34:10' WHERE id=111 AND active = true;
 
 db.First(&user, 111).Update("name", "hello")
 //// SELECT * FROM users LIMIT 1;
@@ -418,35 +378,19 @@ db.Model(User{}).Updates(User{Name: "hello", Age: 18})
 db.Model(User{}).Updates(User{Name: "hello", Age: 18}).RowsAffected
 ```
 
-### Update with SQL Expression
-
-```go
-DB.Model(&product).Update("price", gorm.Expr("price * ? + ?", 2, 100))
-//// UPDATE "products" SET "code" = 'L1212', "price" = price * '2' + '100', "updated_at" = '2013-11-17 21:34:10' WHERE "id" = '2';
-
-DB.Model(&product).Updates(map[string]interface{}{"price": gorm.Expr("price * ? + ?", 2, 100)})
-//// UPDATE "products" SET "code" = 'L1212', "price" = price * '2' + '100', "updated_at" = '2013-11-17 21:34:10' WHERE "id" = '2';
-
-DB.Model(&product).UpdateColumn("quantity", gorm.Expr("quantity - ?", 1))
-//// UPDATE "products" SET "quantity" = quantity - 1 WHERE "id" = '2';
-
-DB.Model(&product).Where("quantity > 1").UpdateColumn("quantity", gorm.Expr("quantity - ?", 1))
-//// UPDATE "products" SET "quantity" = quantity - 1 WHERE "id" = '2' AND quantity > 1;
-```
-
 ## Delete
 
 ```go
 // Delete an existing record
 db.Delete(&email)
-//// DELETE from emails where id=10;
+// DELETE from emails where id=10;
 ```
 
 ### Batch Delete
 
 ```go
 db.Where("email LIKE ?", "%jinzhu%").Delete(Email{})
-//// DELETE from emails where email LIKE "%jinhu%";
+// DELETE from emails where email LIKE "%jinhu%";
 ```
 
 ### Soft Delete
@@ -464,7 +408,7 @@ db.Where("age = ?", 20).Delete(&User{})
 
 // Soft deleted records will be ignored when query them
 db.Where("age = 20").Find(&user)
-//// SELECT * FROM users WHERE age = 20 AND (deleted_at IS NULL OR deleted_at <= '0001-01-02');
+//// SELECT * FROM users WHERE age = 20 AND (deleted_at IS NULL AND deleted_at <= '0001-01-02');
 
 // Find soft deleted records with Unscoped
 db.Unscoped().Where("age = 20").Find(&users)
@@ -472,115 +416,8 @@ db.Unscoped().Where("age = 20").Find(&users)
 
 // Delete record permanently with Unscoped
 db.Unscoped().Delete(&order)
-//// DELETE FROM orders WHERE id=10;
+// DELETE FROM orders WHERE id=10;
 ```
-
-## Associations
-
-### Has One
-
-```go
-// User has one address
-db.Model(&user).Related(&address)
-//// SELECT * FROM addresses WHERE id = 123; // 123 is user's foreign key AddressId
-
-// Specify the foreign key
-db.Model(&user).Related(&address1, "BillingAddressId")
-//// SELECT * FROM addresses WHERE id = 123; // 123 is user's foreign key BillingAddressId
-```
-
-### Belongs To
-
-```go
-// Email belongs to user
-db.Model(&email).Related(&user)
-//// SELECT * FROM users WHERE id = 111; // 111 is email's foreign key UserId
-
-// Specify the foreign key
-db.Model(&email).Related(&user, "ProfileId")
-//// SELECT * FROM users WHERE id = 111; // 111 is email's foreign key ProfileId
-```
-
-### Has Many
-
-```go
-// User has many emails
-db.Model(&user).Related(&emails)
-//// SELECT * FROM emails WHERE user_id = 111;
-// user_id is the foreign key, 111 is user's primary key's value
-
-// Specify the foreign key
-db.Model(&user).Related(&emails, "ProfileId")
-//// SELECT * FROM emails WHERE profile_id = 111;
-// profile_id is the foreign key, 111 is user's primary key's value
-```
-
-### Many To Many
-
-```go
-// User has many languages and belongs to many languages
-db.Model(&user).Related(&languages, "Languages")
-//// SELECT * FROM "languages" INNER JOIN "user_languages" ON "user_languages"."language_id" = "languages"."id" WHERE "user_languages"."user_id" = 111
-// `Languages` is user's column name, this column's tag defined join table like this `gorm:"many2many:user_languages;"`
-```
-
-There is also a mode used to handle many to many relations easily
-
-```go
-// Query
-db.Model(&user).Association("Languages").Find(&languages)
-// same as `db.Model(&user).Related(&languages, "Languages")`
-
-db.Where("name = ?", "ZH").First(&languageZH)
-db.Where("name = ?", "EN").First(&languageEN)
-
-// Append
-db.Model(&user).Association("Languages").Append([]Language{languageZH, languageEN})
-db.Model(&user).Association("Languages").Append([]Language{{Name: "DE"}})
-db.Model(&user).Association("Languages").Append(Language{Name: "DE"})
-
-// Delete
-db.Model(&user).Association("Languages").Delete([]Language{languageZH, languageEN})
-db.Model(&user).Association("Languages").Delete(languageZH, languageEN)
-
-// Replace
-db.Model(&user).Association("Languages").Replace([]Language{languageZH, languageEN})
-db.Model(&user).Association("Languages").Replace(Language{Name: "DE"}, languageEN)
-
-// Count
-db.Model(&user).Association("Languages").Count()
-// Return the count of languages the user has
-
-// Clear
-db.Model(&user).Association("Languages").Clear()
-// Remove all relations between the user and languages
-```
-
-### Polymorphism
-
-Supports polymorphic has-many and has-one associations.
-
-```go
-  type Cat struct {
-    Id    int
-    Name  string
-    Toy   Toy `gorm:"polymorphic:Owner;"`
-  }
-
-  type Dog struct {
-    Id   int
-    Name string
-    Toy  Toy `gorm:"polymorphic:Owner;"`
-  }
-
-  type Toy struct {
-    Id        int
-    Name      string
-    OwnerId   int
-    OwnerType int
-  }
-```
-Note: polymorphic belongs-to and many-to-many are explicitly NOT supported, and will throw errors.
 
 ## Advanced Usage
 
@@ -690,12 +527,6 @@ db.Where(User{Name: "jinzhu"}).Assign(User{Age: 30}).FirstOrCreate(&user)
 ```go
 db.Select("name, age").Find(&users)
 //// SELECT name, age FROM users;
-
-db.Select([]string{"name", "age"}).Find(&users)
-//// SELECT name, age FROM users;
-
-db.Table("users").Select("COALESCE(age,?)", 42).Rows()
-//// SELECT COALESCE(age,'42') FROM users;
 ```
 
 ## Order
@@ -778,7 +609,7 @@ db.Exec("UPDATE orders SET shipped_at=? WHERE id IN (?)", time.Now, []int64{11,2
 
 ## Row & Rows
 
-It is even possible to get query result as `*sql.Row` or `*sql.Rows`
+You are even possible to get query result as `*sql.Row` or `*sql.Rows`
 
 ```go
 row := db.Table("users").Where("name = ?", "jinzhu").Select("name, age").Row() // (*sql.Row)
@@ -787,18 +618,18 @@ row.Scan(&name, &age)
 rows, err := db.Model(User{}).Where("name = ?", "jinzhu").Select("name, age, email").Rows() // (*sql.Rows, error)
 defer rows.Close()
 for rows.Next() {
-	...
-	rows.Scan(&name, &age, &email)
-	...
+  ...
+  rows.Scan(&name, &age, &email)
+  ...
 }
 
 // Raw SQL
 rows, err := db.Raw("select name, age, email from users where name = ?", "jinzhu").Rows() // (*sql.Rows, error)
 defer rows.Close()
 for rows.Next() {
-	...
-	rows.Scan(&name, &age, &email)
-	...
+  ...
+  rows.Scan(&name, &age, &email)
+  ...
 }
 ```
 
@@ -824,12 +655,12 @@ db.Raw("SELECT name, age FROM users WHERE name = ?", 3).Scan(&result)
 ```go
 rows, err := db.Table("orders").Select("date(created_at) as date, sum(amount) as total").Group("date(created_at)").Rows()
 for rows.Next() {
-	...
+  ...
 }
 
 rows, err := db.Table("orders").Select("date(created_at) as date, sum(amount) as total").Group("date(created_at)").Having("sum(amount) > ?", 100).Rows()
 for rows.Next() {
-	...
+  ...
 }
 
 type Result struct {
@@ -844,7 +675,7 @@ db.Table("orders").Select("date(created_at) as date, sum(amount) as total").Grou
 ```go
 rows, err := db.Table("users").Select("users.name, emails.email").Joins("left join emails on emails.user_id = users.id").Rows()
 for rows.Next() {
-	...
+  ...
 }
 
 db.Table("users").Select("users.name, emails.email").Joins("left join emails on emails.user_id = users.id").Scan(&results)
@@ -869,21 +700,21 @@ tx.Commit()
 
 ```go
 func AmountGreaterThan1000(db *gorm.DB) *gorm.DB {
-	return db.Where("amount > ?", 1000)
+  return db.Where("amount > ?", 1000)
 }
 
 func PaidWithCreditCard(db *gorm.DB) *gorm.DB {
-	return db.Where("pay_mode_sign = ?", "C")
+  return db.Where("pay_mode_sign = ?", "C")
 }
 
 func PaidWithCod(db *gorm.DB) *gorm.DB {
-	return db.Where("pay_mode_sign = ?", "C")
+  return db.Where("pay_mode_sign = ?", "C")
 }
 
 func OrderStatus(status []string) func (db *gorm.DB) *gorm.DB {
-	return func (db *gorm.DB) *gorm.DB {
-		return db.Scopes(AmountGreaterThan1000).Where("status in (?)", status)
-	}
+  return func (db *gorm.DB) *gorm.DB {
+     return db.Scopes(AmountGreaterThan1000).Where("status in (?)", status)
+  }
 }
 
 db.Scopes(AmountGreaterThan1000, PaidWithCreditCard).Find(&orders)
@@ -946,18 +777,18 @@ AfterFind
 
 ```go
 func (u *User) BeforeUpdate() (err error) {
-	if u.readonly() {
-		err = errors.New("read only user")
-	}
-	return
+    if u.readonly() {
+        err = errors.New("read only user")
+    }
+    return
 }
 
 // Rollback the insertion if user's id greater than 1000
 func (u *User) AfterCreate() (err error) {
-	if (u.Id > 1000) {
-		err = errors.New("user id is already greater than 1000")
-	}
-	return
+    if (u.Id > 1000) {
+        err = errors.New("user id is already greater than 1000")
+    }
+    return
 }
 ```
 
@@ -968,8 +799,8 @@ Fortunately, gorm support pass transaction to callbacks as you needed, you could
 
 ```go
 func (u *User) AfterCreate(tx *gorm.DB) (err error) {
-	tx.Model(u).Update("role", "admin")
-	return
+    tx.Model(u).Update("role", "admin")
+    return
 }
 ```
 
@@ -994,15 +825,15 @@ type Cart struct {
 }
 
 func (c Cart) TableName() string {
-	return "shopping_cart"
+    return "shopping_cart"
 }
 
 func (u User) TableName() string {
-	if u.Role == "admin" {
-		return "admin_users"
-	} else {
-		return "users"
-	}
+    if u.Role == "admin" {
+        return "admin_users"
+    } else {
+        return "users"
+    }
 }
 ```
 
@@ -1015,7 +846,7 @@ query := db.First(&user).Limit(10).Find(&users)
 
 // So you could do error handing in your application like this:
 if err := db.Where("name = ?", "jinzhu").First(&user).Error; err != nil {
-	// error handling...
+  // error handling...
 }
 
 // RecordNotFound
@@ -1025,7 +856,7 @@ db.Where("name = ?", "hello world").First(&User{}).Error == gorm.RecordNotFound
 db.Where("name = ?", "hello world").First(&user).RecordNotFound()
 
 if db.Model(&user).Related(&credit_card).RecordNotFound() {
-	// no credit card found error handling
+  // no credit card found error handling
 }
 ```
 
@@ -1060,40 +891,11 @@ If you have an existing database schema, and the primary key field is different 
 
 ```go
 type Animal struct {
-	AnimalId     int64 `gorm:"primary_key:yes"`
-	Birthday     time.Time `sql:"DEFAULT:current_timestamp"`
-	Name         string `sql:"default:'galeone'"`
-	Age          int64
+    AnimalId     int64 `primaryKey:"yes"`
+    Birthday     time.Time
+    Age          int64
 }
 ```
-
-If your column names differ from the struct fields, you can specify them like this:
-
-```go
-type Animal struct {
-	AnimalId    int64     `gorm:"column:beast_id; primary_key:yes"`
-	Birthday    time.Time `gorm:"column:day_of_the_beast"`
-	Age         int64     `gorm:"column:age_of_the_beast"`
-}
-```
-
-## Default values
-
-If you have defined a default value in the `sql` tag (see the struct Animal above) the generated create/update SQl will ignore these fields if is set blank data.
-
-Eg.
-
-```go
-db.Create(&Animal{Age: 99, Name: ""})
-```
-
-The generated query will be:
-
-```sql
-INSERT INTO animals("age") values('99');
-```
-
-The same thing occurs in update statements.
 
 ## More examples with query chain
 
@@ -1135,12 +937,15 @@ db.Where("email = ?", "x@example.org").Attrs(User{RegisteredIp: "111.111.111.111
 ```
 
 ## TODO
-* db.Select("Languages", "Name").Update(&user)
-  db.Omit("Languages").Update(&user)
-* Auto migrate indexes
+* db.RegisterFuncation("Search", func() {})
+  db.Model(&[]User{}).Limit(10).Do("Search", "search func's argument")
+  db.Mode(&User{}).Do("EditForm").Get("edit_form_html")
+  DefaultValue, DefaultTimeZone, R/W Splitting, Validation
+* Getter/Setter
+  share or not? transaction?
 * Github Pages
+* Includes
 * AlertColumn, DropColumn
-* R/W Splitting, Validation
 
 # Author
 
@@ -1152,6 +957,6 @@ db.Where("email = ?", "x@example.org").Attrs(User{RegisteredIp: "111.111.111.111
 
 ## License
 
-Released under the [MIT License](https://github.com/jinzhu/gorm/blob/master/License).
+Released under the [MIT License](http://www.opensource.org/licenses/MIT).
 
 [![GoDoc](https://godoc.org/github.com/jinzhu/gorm?status.png)](http://godoc.org/github.com/jinzhu/gorm)
