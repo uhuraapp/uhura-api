@@ -55,7 +55,7 @@ func (f *Fetcher) process(url string) {
 				f.process(link)
 			}
 		} else {
-			err = errors.New("URL is a HTML page, should be the a XML Feed URL")
+			err = errors.New("URL is a HTML page, and a LINK to XML Feed URL was not found")
 			f.err <- err
 			return
 		}
