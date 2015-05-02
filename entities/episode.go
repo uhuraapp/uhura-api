@@ -51,7 +51,7 @@ func SetListenAttributesToEpisode(DB gorm.DB, userId int, episodes []*Episode, c
 
 		if mapListened[episode.Id] != nil {
 			episode.Listened = mapListened[episode.Id].Viewed
-			episode.StoppedAt = mapListened[episode.Id].StoppedAt
+			episode.StoppedAt = &mapListened[episode.Id].StoppedAt
 		}
 	}
 }

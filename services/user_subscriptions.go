@@ -101,14 +101,18 @@ func (s UserSubscriptionService) Create(c *gin.Context) {
 	userId, _ := strconv.Atoi(_userId.(string))
 
 	if s.DB.Table(models.Channel{}.TableName()).Where("uri = ?", sp.Subscription.ChannelId).First(&channel).Error != gorm.RecordNotFound {
+
 		subscription := models.Subscription{
 			UserId:    int64(userId),
 			ChannelId: channel.Id,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
-		s.DB.Table(models.Subscription{}.TableName()).Where("user_id = ?", userId).
-			Where("channel_id = ?", channel.Id).FirstOrCreate(&subscription)
+
+		if err := s.DB.Table(models.Subscription{}.TableName()).Where("user_id = ?", userId).Where("channel_id = ?", channel.Id).First(&models.Subscription{}).Error; err == gorm.RecordNotFound {
+			s.DB.Table(models.Subscription{}.TableName()).Save(&subscription)
+		}
+
 		channel.Subscribed = true
 
 		go helpers.NewEvent(_userId.(string), "subscribed", map[string]interface{}{"channel_id": channel.Id})
