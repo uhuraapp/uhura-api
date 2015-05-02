@@ -17,7 +17,7 @@ type Episode struct {
 	ChannelUri  string    `json:"channel_id"`
 	SourceUrl   string    `json:"source_url"`
 	PublishedAt time.Time `json:"published_at"`
-	StoppedAt   int64     `json:"stopped_at"`
+	StoppedAt   *int64     `json:"stopped_at"`
 	// Uri         string `json:"uri"`
 	// Duration    string `json:"duration"`
 	// Type        string `json:"type"`
