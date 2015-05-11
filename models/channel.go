@@ -23,6 +23,9 @@ type Channel struct {
 	Link          string
 	Loading       bool
 	Colors        string
+
+	URLS []ChannelURL
+
 	helpers.Uriable
 }
 

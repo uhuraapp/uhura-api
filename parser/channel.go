@@ -23,6 +23,7 @@ type Channel struct {
 	Links       []string   `json:"links"`
 	Episodes    []*Episode `json:"episodes"`
 	UhuraId     string     `json:"uhura_id"`
+	LastBuildDate string `json:"last_build_date"`
 
 	requestedURL string
 	feedURL      string
@@ -52,6 +53,7 @@ func (c *Channel) Build() {
 	c.Image = c.FixImage()
 	c.Links = c.GetLinks()
 	c.Id = c.GenerateID()
+	c.LastBuildDate = c.LastBuildDate
 
 	log.Debug("%s", c.Feed.Links)
 	log.Debug("channel build finished: %s", c.Title)
