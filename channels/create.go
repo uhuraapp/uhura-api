@@ -42,8 +42,8 @@ func Create(database gorm.DB, url string) (*entities.Channel, bool) {
 		log.Debug("is ok: %s", ok)
 
 		if ok {
-			database.Table(models.Channel{}.TableName()).First(&channel, model.Id).Error != gorm.RecordNotFound
-			go createLinks(channelF.Links)
+			database.Table(models.Channel{}.TableName()).First(&channel, model.Id)
+			go createLinks(channelF.Links, channel, database)
 		}
 	}
 
@@ -65,7 +65,7 @@ func translateChannel(channel *parser.Channel) *models.Channel {
 		return &model
 }
 
-func createLinks(links []string, channel ) {
+func createLinks(links []string, channel entities.Channel, database gorm.DB) {
 	for i := 0; i < len(links); i++ {
 		u := models.ChannelURL{}
 		database.Table(models.ChannelURL{}.TableName()).
