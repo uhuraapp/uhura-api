@@ -14,6 +14,7 @@ import (
 func main() {
 	r := gin.Default()
 	r.Use(middleware.CORS())
+	r.Use(middleware.Recovery())
 
 	Mount(r.Group("/"))
 
