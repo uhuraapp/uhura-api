@@ -50,19 +50,23 @@ func Create(database gorm.DB, url string) (*entities.Channel, bool) {
 	return &channel, ok
 }
 
+func TranslateFromFeed(model *models.Channel, channel *parser.Channel) *models.Channel {
+	model.Title = channel.Title
+	model.Description = channel.Description
+	model.Copyright = channel.Copyright
+	model.ImageUrl = channel.Image
+	model.Uri = helpers.MakeUri(channel.Title)
+	model.Language = channel.Language
+	model.UpdatedAt = time.Now()
+	model.LastBuildDate = channel.LastBuildDate
+	model.Url = channel.URL
+	return model
+}
+
 func translateChannel(channel *parser.Channel) *models.Channel {
-		model := models.Channel{}
-		model.Title = channel.Title
-		model.Description = channel.Description
-		model.Copyright = channel.Copyright
-		model.ImageUrl = channel.Image
-		model.Uri = helpers.MakeUri(channel.Title)
-		model.Language = channel.Language
-		model.UpdatedAt = time.Now()
-		model.CreatedAt = time.Now()
-		model.LastBuildDate = channel.LastBuildDate
-		model.Url = channel.Links[0]
-		return &model
+	model := models.Channel{}
+	model.CreatedAt = time.Now()
+	return TranslateFromFeed(&model, channel)
 }
 
 func CreateLinks(links []string, channelId int64, database gorm.DB) {
