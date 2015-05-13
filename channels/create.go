@@ -43,7 +43,7 @@ func Create(database gorm.DB, url string) (*entities.Channel, bool) {
 
 		if ok {
 			database.Table(models.Channel{}.TableName()).First(&channel, model.Id)
-			go createLinks(channelF.Links, channel, database)
+			go CreateLinks(channelF.Links, channel.Id, database)
 		}
 	}
 
@@ -65,13 +65,13 @@ func translateChannel(channel *parser.Channel) *models.Channel {
 		return &model
 }
 
-func createLinks(links []string, channel entities.Channel, database gorm.DB) {
+func CreateLinks(links []string, channelId int64, database gorm.DB) {
 	for i := 0; i < len(links); i++ {
 		u := models.ChannelURL{}
 		database.Table(models.ChannelURL{}.TableName()).
 			FirstOrCreate(&u, models.ChannelURL{
-				ChannelId: channel.Id,
-				Url:       links[i],
-			})
+			ChannelId: channelId,
+			Url:       links[i],
+		})
 	}
 }
