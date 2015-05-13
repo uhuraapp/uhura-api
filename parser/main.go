@@ -9,28 +9,16 @@ import (
 func URL(url *url.URL) ([]*Channel, []error) {
 	log.Debug("creating fetcher")
 
-	_errors  := make([]error, 0)
+	_errors := make([]error, 0)
 	channels := make([]*Channel, 0)
 
-	c 			 := make(chan *Channel)
-	finish 	 := make(chan bool)
-	err 		 := make(chan error)
+	c := make(chan *Channel)
+	finish := make(chan bool)
+	err := make(chan error)
 
-	fetcher  := NewFetcher([]string{url.String()}, c, finish, err)
+	fetcher := NewFetcher([]string{url.String()}, c, finish, err)
 
 	go fetcher.run()
-
-	// 	//if isFeed(body) {
-	// 	// [x] xml := ParserXML(body)
-	// 	// [ ] channel := FindOrCreateChannel(xml)
-	// 	// [ ] UpdateChannel(channel, xml)
-	// 	// [ ] CacheImage(channel)
-	// 	// [ ] episodes := FindOrCreateEpisodes(channel, xml)
-	// 	// [ ] GetDelayBetweenEpisodes(episodes)
-	// 	// [ ] SetNewRun(channel)
-	// 	//}
-	// 	return nil
-	// }
 
 	go func() {
 		e := <-err

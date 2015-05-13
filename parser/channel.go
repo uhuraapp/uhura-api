@@ -9,24 +9,24 @@ import (
 )
 
 type Channel struct {
-	Id          string     `json:"id"`
-	Title       string     `json:"title"`
-	Subtitle    string     `json:"subtitle"`
-	Description string     `json:"description"`
-	Summary     string     `json:"summary"`
-	Language    string     `json:"language"`
-	Copyright   string     `json:"copyright"`
-	PubDate     string     `json:"pub_date"`
-	Category    string     `json:"category"`
-	Author      string     `json:"author"`
-	Image       string     `json:"image_url"`
-	Links       []string   `json:"links"`
-	Episodes    []*Episode `json:"episodes"`
-	UhuraId     string     `json:"uhura_id"`
-	LastBuildDate string `json:"last_build_date"`
+	Id            string     `json:"id"`
+	Title         string     `json:"title"`
+	Subtitle      string     `json:"subtitle"`
+	Description   string     `json:"description"`
+	Summary       string     `json:"summary"`
+	Language      string     `json:"language"`
+	Copyright     string     `json:"copyright"`
+	PubDate       string     `json:"pub_date"`
+	Category      string     `json:"category"`
+	Author        string     `json:"author"`
+	Image         string     `json:"image_url"`
+	Links         []string   `json:"links"`
+	Episodes      []*Episode `json:"episodes"`
+	UhuraId       string     `json:"uhura_id"`
+	LastBuildDate string     `json:"last_build_date"`
 
 	requestedURL string
-	feedURL      string
+	URL          string
 
 	Feed *rss.Channel `json:"-"`
 	iTunes
@@ -77,7 +77,7 @@ func (c *Channel) GetExtensions(ext string) map[string][]rss.Extension {
 func (c *Channel) GetLinks() []string {
 	links := make([]string, 0)
 	links = helpers.AppendIfMissing(links, c.requestedURL)
-	links = helpers.AppendIfMissing(links, c.feedURL)
+	links = helpers.AppendIfMissing(links, c.URL)
 
 	if len(c.Feed.Links) > 0 {
 		links = helpers.AppendIfMissing(links, c.Feed.Links[0].Href)

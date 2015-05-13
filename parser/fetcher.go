@@ -87,7 +87,7 @@ func (f *Fetcher) rerun(newURL string) {
 }
 
 func (f *Fetcher) send(channel *Channel, url string) {
-	channel.feedURL = url
+	channel.URL = url
 
 	f.buildRecords(channel)
 

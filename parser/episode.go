@@ -24,7 +24,9 @@ func (e *Episode) Build() bool {
 	e.Title = e.Feed.Title
 	e.Enclosures = e.Feed.Enclosures
 	e.PubDate = e.Feed.PubDate
-	e.ID = *e.Feed.Guid
+	if e.Feed.Guid != nil {
+		e.ID = *e.Feed.Guid
+	}
 	e.Subtitle = e.value(e, "subtitle")
 	e.Summary = e.value(e, "summary")
 	e.Duration = e.value(e, "duration")
