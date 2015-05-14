@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"time"
 
+	"bitbucket.org/dukex/uhura-api/channels"
 	"bitbucket.org/dukex/uhura-api/entities"
 	"bitbucket.org/dukex/uhura-api/helpers"
 	"bitbucket.org/dukex/uhura-api/models"
-	"bitbucket.org/dukex/uhura-api/channels"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 )
@@ -85,10 +85,10 @@ func (s UserSubscriptionService) Delete(c *gin.Context) {
 func (s UserSubscriptionService) Create(c *gin.Context) {
 	var (
 		channel *entities.Channel
-		ok bool
-		params      struct {
+		ok      bool
+		params  struct {
 			Subscription struct {
-				ChannelID string `json:"channel_id"`
+				ChannelID  string `json:"channel_id"`
 				ChannelURL string `json:"channel_url"`
 			}
 		}
@@ -102,10 +102,10 @@ func (s UserSubscriptionService) Create(c *gin.Context) {
 
 	userID, _ := helpers.GetUser(c)
 
-	if(params.Subscription.ChannelURL != "") {
+	if params.Subscription.ChannelURL != "" {
 		__channel, ok := channels.Create(s.DB, params.Subscription.ChannelURL)
 
-		if(!ok) {
+		if !ok {
 			c.AbortWithStatus(500)
 			return
 		}
@@ -114,6 +114,8 @@ func (s UserSubscriptionService) Create(c *gin.Context) {
 
 	channel, ok = s.createByChannelID(userID, params.Subscription.ChannelID)
 
+	go channels.Ping(s.DB, channel.Id)
+
 	if ok {
 		c.JSON(200, gin.H{"subscription": channel})
 	} else {
@@ -121,8 +123,8 @@ func (s UserSubscriptionService) Create(c *gin.Context) {
 	}
 }
 
-func (s UserSubscriptionService) createByChannelID (userID int, channelID string) (*entities.Channel, bool) {
-	var	channel entities.Channel
+func (s UserSubscriptionService) createByChannelID(userID int, channelID string) (*entities.Channel, bool) {
+	var channel entities.Channel
 
 	if s.DB.Table(models.Channel{}.TableName()).Where("uri = ?", channelID).First(&channel).Error != gorm.RecordNotFound {
 		subscription := models.Subscription{

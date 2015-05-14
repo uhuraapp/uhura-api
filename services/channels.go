@@ -30,8 +30,8 @@ func (s ChannelsService) Get(c *gin.Context) {
 	err := s.DB.Table(models.Channel{}.TableName()).Where("uri = ?", channelURI).First(&channel).Error
 
 	if err != nil {
-	  c.AbortWithStatus(404)
-	  return
+		c.AbortWithStatus(404)
+		return
 	}
 
 	channel.Episodes, episodes = s.getEpisodes(channel.Id, channelURI, userId)
