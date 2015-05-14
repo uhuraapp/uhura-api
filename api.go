@@ -5,10 +5,8 @@ import (
 	"net/http"
 	"os"
 
-	"bitbucket.org/dukex/uhura-api/channels"
 	"bitbucket.org/dukex/uhura-api/database"
 	"bitbucket.org/dukex/uhura-api/middleware"
-	"bitbucket.org/dukex/uhura-api/models"
 	"bitbucket.org/dukex/uhura-api/services"
 	"github.com/gin-gonic/gin"
 )
@@ -26,12 +24,6 @@ func main() {
 
 func Mount(_r *gin.RouterGroup) {
 	DB := database.NewPostgresql()
-
-	var cs []models.Channel
-	DB.Table("channels").Find(&cs)
-	for _, c := range cs {
-		channels.Ping(DB, c.Id)
-	}
 
 	userSubscriptions := services.NewUserSubscriptionService(DB)
 	channels := services.NewChannelsService(DB)
