@@ -67,8 +67,8 @@
 		},
 		{
 			"ImportPath": "github.com/gin-gonic/gin",
-			"Comment": "v0.5",
-			"Rev": "50e7e427300a7eeeb299a4cd5bc1ebfa04d48528"
+			"Comment": "v0.6-2-gbd2c864",
+			"Rev": "bd2c8643467007ae1be5c108306e14f1e768c10b"
 		},
 		{
 			"ImportPath": "github.com/gorilla/context",
@@ -84,27 +84,28 @@
 		},
 		{
 			"ImportPath": "github.com/jinzhu/gorm",
-			"Rev": "11bfaba497a2aa5752c30705ea528d18fe68c73d"
+			"Rev": "25772352c2e1cb6a9c00472999015a32dd646218"
 		},
 		{
 			"ImportPath": "github.com/jrallison/go-workers",
-			"Rev": "4f7974846994c67567657dbe3778399e63667022"
+			"Rev": "1eb53815f400d1549afe27913e0bde68ac969c3c"
 		},
 		{
 			"ImportPath": "github.com/jteeuwen/go-pkg-rss",
-			"Rev": "2b6dc03edeb0bb531e0d85dd973e8ac0d7187884"
+			"Rev": "5576b8d83ed75cbb4bc43ef18c07414f880b3472"
 		},
 		{
 			"ImportPath": "github.com/jteeuwen/go-pkg-xmlx",
-			"Rev": "3623786eeb421657b11acad4aa1a9b89683c031f"
+			"Rev": "cf505b97c711dd1c5a4682f68ea04dd35e385b8f"
 		},
 		{
 			"ImportPath": "github.com/julienschmidt/httprouter",
-			"Rev": "b428fda53bb0a764fea9c76c9413512eda291dec"
+			"Rev": "8c199fb6259ffc1af525cc3ad52ee60ba8359669"
 		},
 		{
 			"ImportPath": "github.com/lib/pq",
-			"Rev": "c6325123e6d45115749734a8bc35060ebac74d0e"
+			"Comment": "go1.0-cutoff-47-g93e9980",
+			"Rev": "93e9980741c9e593411b94e07d5bad8cfb4809db"
 		},
 		{
 			"ImportPath": "github.com/mattn/go-colorable",
