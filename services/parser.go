@@ -25,7 +25,7 @@ func (s ParserService) ByURL(c *gin.Context) {
 	channels, errors := parser.URL(url)
 
 	for _, channel := range channels {
-		channel.UhuraId = s.findUhuraID(channel)
+		channel.UhuraID = s.findUhuraID(channel)
 	}
 
 	friendlyErrors := make([]string, 0)
@@ -35,7 +35,7 @@ func (s ParserService) ByURL(c *gin.Context) {
 
 	c.JSON(200, gin.H{
 		"channels": channels,
-		"errors": friendlyErrors,
+		"errors":   friendlyErrors,
 	})
 }
 
