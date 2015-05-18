@@ -37,11 +37,6 @@
 			"Rev": "54abbbf07a45a3ef346ebe903e0715d9a3c19352"
 		},
 		{
-			"ImportPath": "github.com/bitly/go-simplejson",
-			"Comment": "v0.4.3-30-g18db6e6",
-			"Rev": "18db6e68d8fd9cbf2e8ebe4c81a78b96fd9bf05a"
-		},
-		{
 			"ImportPath": "github.com/dchest/uniuri",
 			"Rev": "bc4af7603a3e0ce9d58009f82fca481555182e1c"
 		},
@@ -56,14 +51,6 @@
 		{
 			"ImportPath": "github.com/fiam/gounidecode/unidecode",
 			"Rev": "311ebb7422d3ff70cc1d064c5a297520ff5f304a"
-		},
-		{
-			"ImportPath": "github.com/garyburd/redigo/internal",
-			"Rev": "535138d7bcd717d6531c701ef5933d98b1866257"
-		},
-		{
-			"ImportPath": "github.com/garyburd/redigo/redis",
-			"Rev": "535138d7bcd717d6531c701ef5933d98b1866257"
 		},
 		{
 			"ImportPath": "github.com/gin-gonic/gin",
@@ -85,10 +72,6 @@
 		{
 			"ImportPath": "github.com/jinzhu/gorm",
 			"Rev": "25772352c2e1cb6a9c00472999015a32dd646218"
-		},
-		{
-			"ImportPath": "github.com/jrallison/go-workers",
-			"Rev": "1eb53815f400d1549afe27913e0bde68ac969c3c"
 		},
 		{
 			"ImportPath": "github.com/jteeuwen/go-pkg-rss",
