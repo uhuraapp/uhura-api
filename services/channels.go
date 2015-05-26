@@ -34,6 +34,11 @@ func (s ChannelsService) Get(c *gin.Context) {
 		return
 	}
 
+	if helpers.CacheHeader(c, channel.UpdatedAt) {
+		c.AbortWithStatus(304)
+		return
+	}
+
 	channel.Episodes, episodes = s.getEpisodes(channel.Id, channelURI, userId)
 
 	if userId != 0 {
