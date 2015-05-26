@@ -95,6 +95,10 @@
 			"Rev": "d67e0b7d1797975196499f79bcc322c08b9f218b"
 		},
 		{
+			"ImportPath": "github.com/muesli/cache2go",
+			"Rev": "ffb895e2c938960228f4522bdefe021c07d528f0"
+		},
+		{
 			"ImportPath": "github.com/op/go-logging",
 			"Rev": "e5fb9bb8a3a168cc269b38f092b65d2e18cebb9a"
 		},
