@@ -74,12 +74,16 @@ func (s EpisodeService) Listen(c *gin.Context) {
 	episodeId, _ := strconv.Atoi(c.Params.ByName("id"))
 	userId, _ := helpers.GetUser(c)
 
-	c.Request.ParseForm()
-	at, err := strconv.Atoi(c.Request.Form.Get("at"))
-	if err != nil {
+	var params struct {
+		At string `json:"at"`
+	}
+
+	if c.BindJSON(&params) != nil {
 		c.AbortWithStatus(500)
 		return
 	}
+
+	at := params.At
 
 	err = s.DB.Table(models.Episode{}.TableName()).Where("id = ?", episodeId).First(&episode).Error
 	if err != nil {
