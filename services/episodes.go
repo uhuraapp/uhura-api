@@ -77,13 +77,13 @@ func (s EpisodeService) Listen(c *gin.Context) {
 	c.Request.ParseForm()
 	at, err := strconv.Atoi(c.Request.Form.Get("at"))
 	if err != nil {
-		c.Abort()
+		c.AbortWithStatus(500)
 		return
 	}
 
 	err = s.DB.Table(models.Episode{}.TableName()).Where("id = ?", episodeId).First(&episode).Error
 	if err != nil {
-		c.Abort()
+		c.AbortWithStatus(404)
 		return
 	}
 
