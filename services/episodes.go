@@ -96,7 +96,7 @@ func (s EpisodeService) Listen(c *gin.Context) {
 		ChannelId: episode.ChannelId,
 	}).FirstOrCreate(&models.Listened{})
 
-	c.Data(204, "", []byte(""))
+	c.JSON(201, gin.H{})
 	return
 }
 
