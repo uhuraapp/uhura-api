@@ -46,7 +46,7 @@ func (s EpisodeService) GetPaged(c *gin.Context) {
 	c.JSON(200, map[string]interface{}{"episodes": episodes})
 }
 
-func (s EpisodeService) Listened(c *gin.Context) {
+func (s EpisodeService) Played(c *gin.Context) {
 	var episode models.Episode
 	episodeId, _ := strconv.Atoi(c.Params.ByName("id"))
 	_userId, _ := c.Get("user_id")
@@ -64,6 +64,9 @@ func (s EpisodeService) Listened(c *gin.Context) {
 	}).FirstOrCreate(&models.Listened{})
 
 	go helpers.NewEvent(_userId.(string), "listened", map[string]interface{}{"episode_id": episode.Id, "channel_id": episode.ChannelId})
+
+
+	c.JSON(201, gin.H{})
 }
 
 func (s EpisodeService) Listen(c *gin.Context) {

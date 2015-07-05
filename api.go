@@ -58,8 +58,8 @@ func Mount(_r *gin.RouterGroup) {
 		r.GET("/episodes", episodes.GetPaged)
 
 		// deprecated
-		r.POST("/episodes/:id/listened", needAuth, episodes.Listened)
-		r.POST("/episodes/:id/played", needAuth, episodes.Listened)
+		r.POST("/episodes/:id/listened", needAuth, episodes.Played)
+		r.POST("/episodes/:id/played", needAuth, episodes.Played)
 
 		// deprecated
 		r.DELETE("/episodes/:id/listened", needAuth, episodes.Unlistened)
