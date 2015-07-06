@@ -10,9 +10,9 @@ import (
 )
 
 func GetUser(c *gin.Context) (int, error) {
-	fromContextUserID, err := c.Get("user_id")
-	if err != nil {
-		return 0, err
+	fromContextUserID, ok := c.Get("user_id")
+	if !ok {
+		return 0, errors.New("user_id not found")
 	}
 
 	stringUserID, ok := fromContextUserID.(string)

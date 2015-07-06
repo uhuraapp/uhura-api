@@ -75,7 +75,7 @@ func (s EpisodeService) Listen(c *gin.Context) {
 	userId, _ := helpers.GetUser(c)
 
 	var params struct {
-		At string `json:"at"`
+		At int `json:"at"`
 	}
 
 	if c.BindJSON(&params) != nil {
@@ -85,7 +85,7 @@ func (s EpisodeService) Listen(c *gin.Context) {
 
 	at := params.At
 
-	err = s.DB.Table(models.Episode{}.TableName()).Where("id = ?", episodeId).First(&episode).Error
+	err := s.DB.Table(models.Episode{}.TableName()).Where("id = ?", episodeId).First(&episode).Error
 	if err != nil {
 		c.AbortWithStatus(404)
 		return

@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"strconv"
 	"time"
+	"errors"
 
 	"bitbucket.org/dukex/uhura-api/entities"
 	"bitbucket.org/dukex/uhura-api/helpers"
@@ -87,7 +88,11 @@ func (s AuthService) Logout(c *gin.Context) {
 
 func (s AuthService) getAuth(c *gin.Context) (builder *login.Builder, err error) {
 	var tempInterface interface{}
-	tempInterface, err = c.Get("auth")
+	var ok bool
+	tempInterface, ok = c.Get("auth")
+	if(!ok) {
+		err = errors.New("not found auth")
+	}
 	builder = tempInterface.(*login.Builder)
 	return
 }
