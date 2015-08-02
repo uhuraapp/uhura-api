@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"bitbucket.org/dukex/uhura-api/entities"
-	"bitbucket.org/dukex/uhura-api/helpers"
 	"bitbucket.org/dukex/uhura-api/models"
 	authenticator "github.com/dukex/go-auth"
 	"github.com/gin-gonic/gin"
@@ -52,25 +51,24 @@ func (s AuthService) GetUser(c *gin.Context) {
 	var user entities.User
 	auth, _ := s.getAuth(c)
 
-	userId, _ := auth.CurrentUser(c.Request)
+	userId, ok := auth.CurrentUser(c.Request)
+	if !ok {
+		c.AbortWithStatus(404)
+		return
+	}
+
 	err := s.DB.Table(models.User{}.TableName()).Where("id = ?", userId).First(&user).Error
 	if err != nil {
 		c.AbortWithStatus(404)
 		return
 	}
 
-	go func() {
-		person := helpers.MixpanelPerson(userId)
-		person.Update("$set", map[string]interface{}{
-			"$last_login": time.Now(),
-		})
-	}()
-
 	if user.ApiToken == "" {
 		token := authenticator.NewUserToken()
 		hasher := md5.New()
 		hasher.Write([]byte(token + user.Email))
-		s.DB.Table(models.User{}.TableName()).Where("id = ?", userId).Update("api_token", hex.EncodeToString(hasher.Sum(nil)))
+		user.ApiToken = hex.EncodeToString(hasher.Sum(nil))
+		s.DB.Table(models.User{}.TableName()).Where("id = ?", userId).Update("api_token", user.ApiToken)
 	}
 
 	s.DB.Table(models.User{}.TableName()).Where("id = ?", userId).Update("last_visited_at", time.Now().Format(time.RubyDate))
