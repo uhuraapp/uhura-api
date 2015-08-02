@@ -22,9 +22,13 @@
 			"Rev": "3ad29d1ad1c4f2023e355603324348cf1f4b2d48"
 		},
 		{
+			"ImportPath": "github.com/dchest/uniuri",
+			"Rev": "a64716164ed9ab199e34c152969bfb6b8748dbb9"
+		},
+		{
 			"ImportPath": "github.com/dukex/go-auth",
-			"Comment": "v1.0.0-11-g93f6c17",
-			"Rev": "93f6c179dc353877f0e853344c7dca2d9678f442"
+			"Comment": "v1.0.0-12-g43e8b57",
+			"Rev": "43e8b5796d93d0835ce662f8c0b554c407a8188a"
 		},
 		{
 			"ImportPath": "github.com/dukex/mixpanel",
