@@ -1,5 +1,7 @@
 # GORM
 
+[![Join the chat at https://gitter.im/jinzhu/gorm](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/jinzhu/gorm?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 The fantastic ORM library for Golang, aims to be developer friendly.
 
 [![wercker status](https://app.wercker.com/status/0cb7bb1039e21b74f8274941428e0921/s/master "wercker status")](https://app.wercker.com/project/bykey/0cb7bb1039e21b74f8274941428e0921)
@@ -117,7 +119,7 @@ db, err := gorm.Open("postgres", "user=gorm dbname=gorm sslmode=disable")
 
 // You can also use an existing database connection handle
 // dbSql, _ := sql.Open("postgres", "user=gorm dbname=gorm sslmode=disable")
-// db := gorm.Open("postgres", dbSql)
+// db, _ := gorm.Open("postgres", dbSql)
 
 // Get database connection handle [*sql.DB](http://golang.org/pkg/database/sql/#DB)
 db.DB()
@@ -845,21 +847,54 @@ for rows.Next() {
 }
 
 db.Table("users").Select("users.name, emails.email").Joins("left join emails on emails.user_id = users.id").Scan(&results)
+
+// find a user by email address
+db.Joins("inner join emails on emails.user_id = users.id").Where("emails.email = ?", "x@example.org").Find(&user)
+
+// find all email addresses for a user
+db.Joins("left join users on users.id = emails.user_id").Where("users.name = ?", "jinzhu").Find(&emails)
 ```
 
 ## Transactions
 
-All individual save and delete operations are run in a transaction by default.
+To perform a set of operations within a transaction, the general flow is as below.
+The database handle returned from ``` db.Begin() ``` should be used for all operations within the transaction.
+(Note that all individual save and delete operations are run in a transaction by default.)
 
 ```go
 // begin
 tx := db.Begin()
 
-// rollback
+// do some database operations (use 'tx' from this point, not 'db')
+tx.Create(...)
+...
+
+// rollback in case of error
 tx.Rollback()
 
-// commit
+// Or commit if all is ok
 tx.Commit()
+```
+
+### A Specific Example
+```
+func CreateAnimals(db *gorm.DB) err {
+  tx := db.Begin()
+  // Note the use of tx as the database handle once you are within a transaction
+
+  if err := tx.Create(&Animal{Name: "Giraffe"}).Error; err != nil {
+     tx.Rollback()
+     return err
+  }
+
+  if err := tx.Create(&Animal{Name: "Lion"}).Error; err != nil {
+     tx.Rollback()
+     return err
+  }
+
+  tx.Commit()
+  return nil
+}
 ```
 
 ## Scopes
@@ -1091,7 +1126,7 @@ type Product struct {
 // 2nd param : destination table(id)
 // 3rd param : ONDELETE
 // 4th param : ONUPDATE
-db.Model(&User{}).AddForeignKey("role_id", "roles", "CASCADE", "RESTRICT")
+db.Model(&User{}).AddForeignKey("city_id", "cities(id)", "RESTRICT", "RESTRICT")
 
 // Add index
 db.Model(&User{}).AddIndex("idx_user_name", "name")

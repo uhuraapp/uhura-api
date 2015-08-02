@@ -113,7 +113,7 @@ func (s *DB) Callback() *callback {
 }
 
 func (s *DB) SetLogger(l logger) {
-	s.parent.logger = l
+	s.logger = l
 }
 
 func (s *DB) LogMode(enable bool) *DB {
@@ -212,7 +212,7 @@ func (s *DB) Find(out interface{}, where ...interface{}) *DB {
 }
 
 func (s *DB) Scan(dest interface{}) *DB {
-	return s.clone().NewScope(s.Value).InstanceSet("gorm:query_destination", dest).callCallbacks(s.parent.callback.queries).db
+	return s.clone().NewScope(s.Value).Set("gorm:query_destination", dest).callCallbacks(s.parent.callback.queries).db
 }
 
 func (s *DB) Row() *sql.Row {
@@ -254,9 +254,9 @@ func (s *DB) FirstOrCreate(out interface{}, where ...interface{}) *DB {
 		if !result.RecordNotFound() {
 			return result
 		}
-		c.NewScope(out).inlineCondition(where...).initialize().callCallbacks(s.parent.callback.creates)
+		c.err(c.NewScope(out).inlineCondition(where...).initialize().callCallbacks(s.parent.callback.creates).db.Error)
 	} else if len(c.search.assignAttrs) > 0 {
-		c.NewScope(out).InstanceSet("gorm:update_interface", s.search.assignAttrs).callCallbacks(s.parent.callback.updates)
+		c.err(c.NewScope(out).InstanceSet("gorm:update_interface", s.search.assignAttrs).callCallbacks(s.parent.callback.updates).db.Error)
 	}
 	return c
 }
@@ -396,28 +396,33 @@ func (s *DB) AutoMigrate(values ...interface{}) *DB {
 }
 
 func (s *DB) ModifyColumn(column string, typ string) *DB {
-	s.clone().NewScope(s.Value).modifyColumn(column, typ)
-	return s
+	scope := s.clone().NewScope(s.Value)
+	scope.modifyColumn(column, typ)
+	return scope.db
 }
 
 func (s *DB) DropColumn(column string) *DB {
-	s.clone().NewScope(s.Value).dropColumn(column)
-	return s
+	scope := s.clone().NewScope(s.Value)
+	scope.dropColumn(column)
+	return scope.db
 }
 
 func (s *DB) AddIndex(indexName string, column ...string) *DB {
-	s.clone().NewScope(s.Value).addIndex(false, indexName, column...)
-	return s
+	scope := s.clone().NewScope(s.Value)
+	scope.addIndex(false, indexName, column...)
+	return scope.db
 }
 
 func (s *DB) AddUniqueIndex(indexName string, column ...string) *DB {
-	s.clone().NewScope(s.Value).addIndex(true, indexName, column...)
-	return s
+	scope := s.clone().NewScope(s.Value)
+	scope.addIndex(true, indexName, column...)
+	return scope.db
 }
 
 func (s *DB) RemoveIndex(indexName string) *DB {
-	s.clone().NewScope(s.Value).removeIndex(indexName)
-	return s
+	scope := s.clone().NewScope(s.Value)
+	scope.removeIndex(indexName)
+	return scope.db
 }
 
 /*
@@ -427,8 +432,9 @@ Example:
 	db.Model(&User{}).AddForeignKey("city_id", "cities(id)", "RESTRICT", "RESTRICT")
 */
 func (s *DB) AddForeignKey(field string, dest string, onDelete string, onUpdate string) *DB {
-	s.clone().NewScope(s.Value).addForeignKey(field, dest, onDelete, onUpdate)
-	return s
+	scope := s.clone().NewScope(s.Value)
+	scope.addForeignKey(field, dest, onDelete, onUpdate)
+	return scope.db
 }
 
 func (s *DB) Association(column string) *Association {
@@ -439,10 +445,10 @@ func (s *DB) Association(column string) *Association {
 		err = errors.New("primary key can't be nil")
 	} else {
 		if field, ok := scope.FieldByName(column); ok {
-			if field.Relationship == nil || field.Relationship.ForeignFieldName == "" {
+			if field.Relationship == nil || len(field.Relationship.ForeignFieldNames) == 0 {
 				err = fmt.Errorf("invalid association %v for %v", column, scope.IndirectValue().Type())
 			} else {
-				return &Association{Scope: scope, Column: column, PrimaryKey: primaryField.Field.Interface(), Field: field}
+				return &Association{Scope: scope, Column: column, Field: field}
 			}
 		} else {
 			err = fmt.Errorf("%v doesn't have column %v", scope.IndirectValue().Type(), column)
@@ -473,19 +479,18 @@ func (s *DB) Get(name string) (value interface{}, ok bool) {
 }
 
 func (s *DB) SetJoinTableHandler(source interface{}, column string, handler JoinTableHandlerInterface) {
-	for _, field := range s.NewScope(source).GetModelStruct().StructFields {
+	scope := s.NewScope(source)
+	for _, field := range scope.GetModelStruct().StructFields {
 		if field.Name == column || field.DBName == column {
 			if many2many := parseTagSetting(field.Tag.Get("gorm"))["MANY2MANY"]; many2many != "" {
 				source := (&Scope{Value: source}).GetModelStruct().ModelType
 				destination := (&Scope{Value: reflect.New(field.Struct.Type).Interface()}).GetModelStruct().ModelType
 				handler.Setup(field.Relationship, many2many, source, destination)
 				field.Relationship.JoinTableHandler = handler
-				s.Table(handler.Table(s)).AutoMigrate(handler)
+				if table := handler.Table(s); scope.Dialect().HasTable(scope, table) {
+					s.Table(table).AutoMigrate(handler)
+				}
 			}
 		}
 	}
-}
-
-func (s *DB) SetTableNameHandler(source interface{}, handler func(*DB) string) {
-	s.NewScope(source).GetModelStruct().TableName = handler
 }

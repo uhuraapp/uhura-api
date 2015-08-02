@@ -3,6 +3,7 @@ package gorm
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -87,6 +88,13 @@ func (scope *Scope) Quote(str string) string {
 	}
 }
 
+func (scope *Scope) QuoteIfPossible(str string) string {
+	if regexp.MustCompile("^[a-zA-Z]+(.[a-zA-Z]+)*$").MatchString(str) {
+		return scope.Quote(str)
+	}
+	return str
+}
+
 // Dialect get dialect
 func (scope *Scope) Dialect() Dialect {
 	return scope.db.parent.dialect
@@ -108,6 +116,14 @@ func (scope *Scope) Log(v ...interface{}) {
 // HasError check if there are any error
 func (scope *Scope) HasError() bool {
 	return scope.db.Error != nil
+}
+
+func (scope *Scope) PrimaryFields() []*Field {
+	var fields = []*Field{}
+	for _, field := range scope.GetModelStruct().PrimaryFields {
+		fields = append(fields, scope.Fields()[field.DBName])
+	}
+	return fields
 }
 
 func (scope *Scope) PrimaryField() *Field {
@@ -251,16 +267,14 @@ func (scope *Scope) TableName() string {
 		return tabler.TableName(scope.db)
 	}
 
-	if scope.GetModelStruct().TableName != nil {
-		return scope.GetModelStruct().TableName(scope.db)
-	}
-
-	scope.Err(errors.New("wrong table name"))
-	return ""
+	return scope.GetModelStruct().TableName(scope.db.Model(scope.Value))
 }
 
 func (scope *Scope) QuotedTableName() (name string) {
 	if scope.Search != nil && len(scope.Search.tableName) > 0 {
+		if strings.Index(scope.Search.tableName, " ") != -1 {
+			return scope.Search.tableName
+		}
 		return scope.Quote(scope.Search.tableName)
 	} else {
 		return scope.Quote(scope.TableName())
@@ -275,7 +289,7 @@ func (scope *Scope) CombinedConditionSql() string {
 
 func (scope *Scope) FieldByName(name string) (field *Field, ok bool) {
 	for _, field := range scope.Fields() {
-		if field.Name == name {
+		if field.Name == name || field.DBName == name {
 			return field, true
 		}
 	}
@@ -294,7 +308,7 @@ func (scope *Scope) Exec() *Scope {
 
 	if !scope.HasError() {
 		if result, err := scope.SqlDB().Exec(scope.Sql, scope.SqlVars...); scope.Err(err) == nil {
-			if count, err := result.RowsAffected(); err == nil {
+			if count, err := result.RowsAffected(); scope.Err(err) == nil {
 				scope.db.RowsAffected = count
 			}
 		}
@@ -368,6 +382,8 @@ func (scope *Scope) SelectAttrs() []string {
 		for _, value := range scope.Search.selects {
 			if str, ok := value.(string); ok {
 				attrs = append(attrs, str)
+			} else if strs, ok := value.([]string); ok {
+				attrs = append(attrs, strs...)
 			} else if strs, ok := value.([]interface{}); ok {
 				for _, str := range strs {
 					attrs = append(attrs, fmt.Sprintf("%v", str))
