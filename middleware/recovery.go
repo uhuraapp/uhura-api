@@ -24,14 +24,16 @@ func Recovery() gin.HandlerFunc {
 
 func recovery() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		defer func() {
-			if r := recover(); r != nil {
-				err, _ := r.(error)
-				rollbar.ErrorWithStackSkip(rollbar.ERR, err, 5)
-				c.AbortWithStatus(500)
-				rollbar.Wait()
-			}
-		}()
+		if os.Getenv("ENABLE_ROLLBAR") == "true" {
+			defer func() {
+				if r := recover(); r != nil {
+					err, _ := r.(error)
+					rollbar.ErrorWithStackSkip(rollbar.ERR, err, 5)
+					c.AbortWithStatus(500)
+					rollbar.Wait()
+				}
+			}()
+		}
 		c.Next()
 	}
 }
