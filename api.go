@@ -49,6 +49,7 @@ func Mount(_r *gin.RouterGroup) {
 		r.GET("/auth/:provider/callback", auth.ByProviderCallback)
 
 		r.GET("/user", auth.GetUser)
+		r.POST("/users/sign_in", auth.ByEmailPassword)
 		r.GET("/users/logout", auth.Logout)
 		r.GET("/users/subscriptions", needAuth, userSubscriptions.Index)
 		r.POST("/users/subscriptions", needAuth, userSubscriptions.Create)
@@ -57,13 +58,12 @@ func Mount(_r *gin.RouterGroup) {
 
 		r.GET("/episodes", episodes.GetPaged)
 
-		// deprecated
-		r.POST("/episodes/:id/listened", needAuth, episodes.Played)
 		r.POST("/episodes/:id/played", needAuth, episodes.Played)
+		r.DELETE("/episodes/:id/played", needAuth, episodes.Unlistened)
 
 		// deprecated
+		r.POST("/episodes/:id/listened", needAuth, episodes.Played)
 		r.DELETE("/episodes/:id/listened", needAuth, episodes.Unlistened)
-		r.DELETE("/episodes/:id/played", needAuth, episodes.Unlistened)
 
 		r.GET("/episodes/:id/download", needAuth, episodes.Download)
 		r.HEAD("/episodes/:id/download", needAuth, episodes.Download)

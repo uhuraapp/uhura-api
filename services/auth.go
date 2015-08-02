@@ -3,14 +3,13 @@ package services
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"strconv"
-	"time"
 	"errors"
+	"time"
 
 	"bitbucket.org/dukex/uhura-api/entities"
 	"bitbucket.org/dukex/uhura-api/helpers"
 	"bitbucket.org/dukex/uhura-api/models"
-	login "github.com/dukex/login2"
+	authenticator "github.com/dukex/go-auth"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 )
@@ -25,19 +24,24 @@ func NewAuthService(db gorm.DB) AuthService {
 
 func (s AuthService) ByProvider(c *gin.Context) {
 	auth, _ := s.getAuth(c)
-	auth.SetReturnTo(c.Writer, c.Request, c.Request.Header.Get("Origin"))
-	authorizer := auth.OAuthAuthorize(c.Params.ByName("provider"))
+	authorizer := auth.Authorize(c.Params.ByName("provider"))
 	authorizer(c.Writer, c.Request)
+	return
+}
+
+func (s AuthService) ByEmailPassword(c *gin.Context) {
+	auth, _ := s.getAuth(c)
+	auth.SignIn(c.Writer, c.Request)
+	return
 }
 
 func (s AuthService) ByProviderCallback(c *gin.Context) {
 	auth, _ := s.getAuth(c)
-	userID, err := auth.OAuthCallback(c.Params.ByName("provider"), c.Request)
+	userId, err := auth.OAuthCallback(c.Params.ByName("provider"), c.Writer, c.Request)
 	if err == nil {
-		userIdint := strconv.FormatInt(userID, 10)
-		session := auth.Login(c.Request, userIdint)
+		session := auth.Login(c.Request, userId)
 		session.Save(c.Request, c.Writer)
-		go helpers.NewEvent(userIdint, "login", map[string]interface{}{})
+		// 	go helpers.NewEvent(userIdint, "login", map[string]interface{}{})
 	}
 
 	closeHTML := []byte("<html><head></head><body>Loading....<script>window.close()</script></body></html>")
@@ -63,7 +67,7 @@ func (s AuthService) GetUser(c *gin.Context) {
 	}()
 
 	if user.ApiToken == "" {
-		token := login.NewUserToken()
+		token := authenticator.NewUserToken()
 		hasher := md5.New()
 		hasher.Write([]byte(token + user.Email))
 		s.DB.Table(models.User{}.TableName()).Where("id = ?", userId).Update("api_token", hex.EncodeToString(hasher.Sum(nil)))
@@ -76,23 +80,23 @@ func (s AuthService) GetUser(c *gin.Context) {
 
 func (s AuthService) Logout(c *gin.Context) {
 
-	auth, _ := s.getAuth(c)
-	userId, _ := auth.CurrentUser(c.Request)
+	// auth, _ := s.getAuth(c)
+	// userId, _ := auth.CurrentUser(c.Request)
 
-	go helpers.NewEvent(userId, "logout", map[string]interface{}{})
-	session := auth.Logout(c.Request)
-	session.Save(c.Request, c.Writer)
+	// go helpers.NewEvent(userId, "logout", map[string]interface{}{})
+	// session := auth.Logout(c.Request)
+	// session.Save(c.Request, c.Writer)
 
 	c.Data(200, "", []byte(""))
 }
 
-func (s AuthService) getAuth(c *gin.Context) (builder *login.Builder, err error) {
+func (s AuthService) getAuth(c *gin.Context) (auth *authenticator.Auth, err error) {
 	var tempInterface interface{}
 	var ok bool
 	tempInterface, ok = c.Get("auth")
-	if(!ok) {
+	if !ok {
 		err = errors.New("not found auth")
 	}
-	builder = tempInterface.(*login.Builder)
+	auth = tempInterface.(*authenticator.Auth)
 	return
 }
