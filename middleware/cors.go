@@ -8,7 +8,8 @@ import (
 
 func CORS() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		referer, _ := url.Parse(c.Request.Referer())
+		origin := c.Request.Header.Get("Origin")
+		referer, _ := url.Parse(origin)
 
 		c.Writer.Header().Set("Access-Control-Allow-Origin", referer.Scheme+"://"+referer.Host)
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
