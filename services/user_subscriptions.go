@@ -27,7 +27,7 @@ func NewUserSubscriptionService(db gorm.DB) UserSubscriptionService {
 // Index TODO
 func (s UserSubscriptionService) Index(c *gin.Context) {
 	var ids []int
-	var subscriptions []entities.Subscription
+	subscriptions := make([]entities.Subscription, 0)
 
 	_userID, _ := c.Get("user_id")
 	userID := _userID.(string)
