@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bitbucket.org/dukex/uhura-api/entities"
+	"bitbucket.org/dukex/uhura-api/helpers"
 	"bitbucket.org/dukex/uhura-api/models"
 	authenticator "github.com/dukex/go-auth"
 	"github.com/gin-gonic/gin"
@@ -77,13 +78,12 @@ func (s AuthService) GetUser(c *gin.Context) {
 }
 
 func (s AuthService) Logout(c *gin.Context) {
+	auth, _ := s.getAuth(c)
+	userId, _ := auth.CurrentUser(c.Request)
 
-	// auth, _ := s.getAuth(c)
-	// userId, _ := auth.CurrentUser(c.Request)
-
-	// go helpers.NewEvent(userId, "logout", map[string]interface{}{})
-	// session := auth.Logout(c.Request)
-	// session.Save(c.Request, c.Writer)
+	go helpers.NewEvent(userId, "logout", map[string]interface{}{})
+	session := auth.Logout(c.Request)
+	session.Save(c.Request, c.Writer)
 
 	c.Data(200, "", []byte(""))
 }
