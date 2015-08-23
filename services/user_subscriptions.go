@@ -139,9 +139,8 @@ func (s UserSubscriptionService) Create(c *gin.Context) {
 	userIDInt, _ := helpers.GetUser(c)
 	channel, ok = s.createByChannelID(userIDInt, params.Subscription.ChannelID)
 
-	go channels.Ping(s.DB, channel.Id)
-
 	if ok {
+		go channels.Ping(s.DB, channel.Id)
 		c.JSON(200, gin.H{"subscription": channel})
 	} else {
 		c.AbortWithStatus(404)
