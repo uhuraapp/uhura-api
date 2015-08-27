@@ -46,10 +46,11 @@ func (s UserSubscriptionService) Index(c *gin.Context) {
 	}
 
 	s.DB.Table(models.Subscription{}.TableName()).Where("user_id = ?", userID).
+		Order("channel_id").
 		Pluck("channel_id", &ids)
 
 	if len(ids) > 0 {
-		s.DB.Table(models.Channel{}.TableName()).Where("id in (?)", ids).Find(&subscriptions)
+		s.DB.Table(models.Channel{}.TableName()).Where("id in (?)", ids).Order("title ASC").Find(&subscriptions)
 	}
 
 	// for i, _ := range subscriptions {
