@@ -2,13 +2,13 @@ package services_test
 
 import (
 	"net/http"
-	"strconv"
+	"time"
 
+	"bitbucket.org/dukex/uhura-api/database"
+	"bitbucket.org/dukex/uhura-api/models"
+	"bitbucket.org/dukex/uhura-api/services"
 	"github.com/bitly/go-simplejson"
 	"github.com/jinzhu/gorm"
-	"github.com/uhuraapp/uhura-api/cache"
-	"github.com/uhuraapp/uhura-api/models"
-	"github.com/uhuraapp/uhura-api/services"
 	. "gopkg.in/check.v1"
 )
 
@@ -23,7 +23,7 @@ func (x *SubscriptionsSuite) SetUpSuite(c *C) {
 }
 
 func (_ *SubscriptionsSuite) SetUpTest(c *C) {
-	cache.DATA = nil
+	database.CACHE.Flush()
 }
 
 func (_ *SubscriptionsSuite) TearDownTest(c *C) {
@@ -31,8 +31,8 @@ func (_ *SubscriptionsSuite) TearDownTest(c *C) {
 }
 
 func (x SubscriptionsSuite) TestGetIsOk(c *C) {
-	s := services.NewSubscriptionService(x.DB)
-	r := request("GET", s.Get)
+	s := services.NewUserSubscriptionService(x.DB)
+	r := request("GET", s.Index, "")
 
 	c.Assert(r.Code, Equals, http.StatusOK)
 }
@@ -43,15 +43,16 @@ func (x SubscriptionsSuite) TestGetReturnSubscriptions(c *C) {
 	x.DB.Create(&channel)
 	x.DB.Create(&models.Subscription{ChannelId: channel.Id, UserId: 1})
 
-	s := services.NewSubscriptionService(x.DB)
-	r := request("GET", s.Get)
+	s := services.NewUserSubscriptionService(x.DB)
+	r := request("GET", s.Index, "")
 
 	data, _ := simplejson.NewJson(r.Body.Bytes())
 	currentTitle, _ := data.GetPath("subscriptions").GetIndex(0).Get("title").String()
 
 	c.Assert(channel.Title, Equals, currentTitle)
-	cached, _ := cache.Get("s:ids:1", []int64{})
-	c.Assert(cached.([]int64)[0], Equals, channel.Id)
+	c.Assert(r.Code, Equals, http.StatusOK)
+	cached, _ := database.CACHE.Value("s:1")
+	c.Assert(cached.Data().(*time.Time), NotNil)
 }
 
 func (x SubscriptionsSuite) TestGetReturnSubscriptionsCached(c *C) {
@@ -59,72 +60,20 @@ func (x SubscriptionsSuite) TestGetReturnSubscriptionsCached(c *C) {
 
 	x.DB.Create(&channel)
 
-	cache.Set("s:ids:1", []int64{channel.Id})
+	now := time.Now()
+	t := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()-2, 0, 0, 0, now.Location())
+	database.CACHE.Add("s:1", 1*time.Minute, &t)
 
-	s := services.NewSubscriptionService(x.DB)
-	r := request("GET", s.Get)
+	s := services.NewUserSubscriptionService(x.DB)
+	r := request("GET", s.Index, time.Now().Add(-3*time.Hour).Format(time.RFC1123))
 
-	data, _ := simplejson.NewJson(r.Body.Bytes())
-	currentTitle, _ := data.GetPath("subscriptions").GetIndex(0).Get("title").String()
-
-	c.Assert(channel.Title, Equals, currentTitle)
-}
-
-func (x SubscriptionsSuite) TestGetReturnSubscriptionsCachedError(c *C) {
-	channel := models.Channel{Title: "Meu Podcast"}
-	x.DB.Create(&channel)
-	x.DB.Create(&models.Subscription{ChannelId: channel.Id, UserId: 1})
-	cache.Set("s:ids:1", "ABC")
-	s := services.NewSubscriptionService(x.DB)
-	r := request("GET", s.Get)
-
-	data, _ := simplejson.NewJson(r.Body.Bytes())
-	currentTitle, _ := data.GetPath("subscriptions").GetIndex(0).Get("title").String()
-
-	c.Assert(channel.Title, Equals, currentTitle)
-	cached, _ := cache.Get("s:ids:1", []int64{})
-	c.Assert(cached.([]int64)[0], Equals, channel.Id)
-}
-
-func (x SubscriptionsSuite) TestGetToView(c *C) {
-	channel := models.Channel{Title: "Meu Podcast"}
-	x.DB.Create(&channel)
-	x.DB.Create(&models.Subscription{ChannelId: channel.Id, UserId: 1})
-	x.DB.Create(&models.Episode{Id: 1, SourceUrl: "a", Key: "a", ChannelId: channel.Id})
-	x.DB.Create(&models.Episode{Id: 2, SourceUrl: "b", Key: "b", ChannelId: channel.Id})
-	x.DB.Create(&models.Listened{ChannelId: channel.Id, UserId: 1})
-
-	s := services.NewSubscriptionService(x.DB)
-	r := request("GET", s.Get)
-
-	data, _ := simplejson.NewJson(r.Body.Bytes())
-	toView, _ := data.GetPath("subscriptions").GetIndex(0).Get("to_view").Int64()
-
-	c.Assert(toView, Equals, int64(1))
-	cached, _ := cache.Get("c:e:"+strconv.Itoa(int(channel.Id)), 0)
-	c.Assert(cached, Equals, int64(2))
-}
-
-func (x SubscriptionsSuite) TestGetToViewCached(c *C) {
-	channel := models.Channel{Title: "Meu Podcast"}
-	x.DB.Create(&channel)
-	x.DB.Create(&models.Subscription{ChannelId: channel.Id, UserId: 1})
-	x.DB.Create(&models.Listened{ChannelId: channel.Id, UserId: 1})
-
-	cache.Set("c:e:"+strconv.Itoa(int(channel.Id)), int64(2))
-
-	s := services.NewSubscriptionService(x.DB)
-	r := request("GET", s.Get)
-
-	data, _ := simplejson.NewJson(r.Body.Bytes())
-	toView, _ := data.GetPath("subscriptions").GetIndex(0).Get("to_view").Int64()
-
-	c.Assert(toView, Equals, int64(1))
+	c.Assert(string(r.Body.Bytes()), Equals, "")
+	c.Assert(r.Code, Equals, http.StatusNotModified)
 }
 
 func (x SubscriptionsSuite) TestGetIsOkBot(c *C) {
-	s := services.NewSubscriptionService(x.DB)
-	r := botRequest("GET", s.Get)
+	s := services.NewUserSubscriptionService(x.DB)
+	r := botRequest("GET", s.Index)
 
 	data, _ := simplejson.NewJson(r.Body.Bytes())
 	subscriptions, _ := data.GetPath("subscriptions").Array()

@@ -2,6 +2,7 @@ package services
 
 import (
 	"encoding/json"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -40,7 +41,7 @@ func (s UserSubscriptionService) Index(c *gin.Context) {
 	}
 
 	if helpers.CacheHeader(c, t) {
-		c.AbortWithStatus(304)
+		c.AbortWithStatus(http.StatusNotModified)
 		return
 	}
 
