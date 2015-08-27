@@ -118,6 +118,7 @@ func (s EpisodeService) Unlistened(c *gin.Context) {
 	}).Delete(&models.Listened{})
 
 	go helpers.NewEvent(_userId.(string), "unlistened", map[string]interface{}{"episode_id": episode.Id, "channel_id": episode.ChannelId})
+	c.AbortWithStatus(204)
 }
 
 func (s EpisodeService) Download(c *gin.Context) {
