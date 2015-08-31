@@ -147,6 +147,9 @@ func (s UserSubscriptionService) Create(c *gin.Context) {
 
 	if ok {
 		go channels.Ping(s.DB, channel.Id)
+
+		channel.Episodes = make([]int64, 0)
+
 		c.JSON(200, gin.H{"subscription": channel})
 	} else {
 		c.AbortWithStatus(404)
