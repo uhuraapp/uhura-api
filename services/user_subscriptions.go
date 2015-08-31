@@ -79,6 +79,8 @@ func (s UserSubscriptionService) Show(c *gin.Context) {
 		channel.Subscribed = true
 	}
 
+	channel.Episodes = make([]int64, 0)
+
 	c.JSON(200, gin.H{"subscription": channel})
 }
 
