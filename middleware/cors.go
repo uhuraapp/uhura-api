@@ -8,14 +8,10 @@ import (
 
 func CORS() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		allow := "http://uhura.io"
-
 		origin := c.Request.Header.Get("Origin")
 		referer, _ := url.Parse(origin)
 
-		if referer.Host == "localhost:4200" {
-			allow = referer.Scheme + "://" + referer.Host
-		}
+		allow := referer.Scheme + "://" + referer.Host
 
 		c.Writer.Header().Set("Access-Control-Allow-Origin", allow)
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
