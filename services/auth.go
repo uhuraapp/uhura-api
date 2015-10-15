@@ -3,7 +3,9 @@ package services
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
+	"net/http"
 	"time"
 
 	"bitbucket.org/dukex/uhura-api/entities"
@@ -75,6 +77,86 @@ func (s AuthService) GetUser(c *gin.Context) {
 	s.DB.Table(models.User{}.TableName()).Where("id = ?", userId).Update("last_visited_at", time.Now().Format(time.RubyDate))
 
 	c.JSON(200, user)
+}
+
+type ErrorJSON struct {
+	Key     string `json:"key"`
+	Message string `json:"message"`
+	Error   string `json:"error"`
+}
+
+type ErrorResponse struct {
+	Errors []ErrorJSON `json:"errors"`
+}
+
+func (s AuthService) SignUp(c *gin.Context) {
+	decoder := json.NewDecoder(c.Request.Body)
+	var params struct {
+		User struct {
+			Email    string `json:"email"`
+			Password string `json:"password"`
+			Name     string `json:"name"`
+		} `json:"user"`
+	}
+
+	decoder.Decode(&params)
+
+	if params.User.Email == "" || params.User.Password == "" || params.User.Name == "" {
+		c.JSON(422, ErrorResponse{
+			[]ErrorJSON{{
+				Key: "fields_required", Message: "Email, Password and Name is required"},
+			},
+		},
+		)
+		return
+	}
+
+	if len([]rune(params.User.Password)) < 5 {
+		c.JSON(422, ErrorResponse{
+			[]ErrorJSON{{
+				Key: "password_too_short", Message: "Password too short"},
+			},
+		},
+		)
+		return
+	}
+
+	password, err := authenticator.GenerateHash(params.User.Password)
+
+	if err != nil {
+		c.JSON(422, ErrorResponse{
+			[]ErrorJSON{{
+				Key: "generate_hash_password_error", Message: "Internal server error", Error: err.Error()},
+			},
+		},
+		)
+		return
+	}
+
+	user := models.User{
+		Email:    params.User.Email,
+		Password: password,
+		Name:     params.User.Name,
+		Provider: "email",
+		ApiToken: authenticator.NewUserToken(),
+	}
+
+	err = s.DB.Table(user.TableName()).Where("email = ?", user.Email).First(&models.User{}).Error
+	if err == nil {
+		c.JSON(422, ErrorResponse{
+			[]ErrorJSON{{
+				Key: "already_registrated", Message: "Email exists in database"},
+			},
+		},
+		)
+		return
+	}
+
+	s.DB.Table(user.TableName()).Save(&user)
+
+	c.JSON(http.StatusCreated, struct {
+		Id int64 `json:"id"`
+	}{user.Id})
 }
 
 func (s AuthService) Logout(c *gin.Context) {

@@ -51,6 +51,8 @@ func Mount(_r *gin.RouterGroup) {
 		r.GET("/user", auth.GetUser)
 		r.POST("/users/sign_in", auth.ByEmailPassword)
 		r.GET("/users/logout", auth.Logout)
+		r.POST("/users", auth.SignUp)
+
 		r.GET("/users/subscriptions", needAuth, userSubscriptions.Index)
 		r.POST("/users/subscriptions", needAuth, userSubscriptions.Create)
 		r.GET("/users/subscriptions/:uri", needAuth, userSubscriptions.Show)
