@@ -62,14 +62,15 @@ func (structField *StructField) clone() *StructField {
 }
 
 type Relationship struct {
-	Kind                         string
-	PolymorphicType              string
-	PolymorphicDBName            string
-	ForeignFieldNames            []string
-	ForeignDBNames               []string
-	AssociationForeignFieldNames []string
-	AssociationForeignDBNames    []string
-	JoinTableHandler             JoinTableHandlerInterface
+	Kind                               string
+	PolymorphicType                    string
+	PolymorphicDBName                  string
+	ForeignFieldNames                  []string
+	ForeignDBNames                     []string
+	AssociationForeignFieldNames       []string
+	AssociationForeignStructFieldNames []string
+	AssociationForeignDBNames          []string
+	JoinTableHandler                   JoinTableHandlerInterface
 }
 
 func (scope *Scope) GetModelStruct() *ModelStruct {
@@ -156,12 +157,12 @@ func (scope *Scope) GetModelStruct() *ModelStruct {
 		for _, field := range fields {
 			if !field.IsIgnored {
 				fieldStruct := field.Struct
-				fieldType, indirectType := fieldStruct.Type, fieldStruct.Type
+				indirectType := fieldStruct.Type
 				if indirectType.Kind() == reflect.Ptr {
 					indirectType = indirectType.Elem()
 				}
 
-				if _, isScanner := reflect.New(fieldType).Interface().(sql.Scanner); isScanner {
+				if _, isScanner := reflect.New(indirectType).Interface().(sql.Scanner); isScanner {
 					field.IsScanner, field.IsNormal = true, true
 				}
 
@@ -242,6 +243,7 @@ func (scope *Scope) GetModelStruct() *ModelStruct {
 								for _, name := range associationForeignKeys {
 									if field, ok := toScope.FieldByName(name); ok {
 										relationship.AssociationForeignFieldNames = append(relationship.AssociationForeignFieldNames, field.DBName)
+										relationship.AssociationForeignStructFieldNames = append(relationship.AssociationForeignFieldNames, field.Name)
 										joinTableDBName := ToDBName(elemType.Name()) + "_" + field.DBName
 										relationship.AssociationForeignDBNames = append(relationship.AssociationForeignDBNames, joinTableDBName)
 									}

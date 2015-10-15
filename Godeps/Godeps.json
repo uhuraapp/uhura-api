@@ -57,7 +57,7 @@
 		},
 		{
 			"ImportPath": "github.com/jinzhu/gorm",
-			"Rev": "a7762ea7d6a6d2c24c6b3541cb16347e15f69bcc"
+			"Rev": "1d5f5f43f37a19d452a920447108de6e9e7b5e96"
 		},
 		{
 			"ImportPath": "github.com/jteeuwen/go-pkg-rss",
@@ -69,8 +69,8 @@
 		},
 		{
 			"ImportPath": "github.com/lib/pq",
-			"Comment": "go1.0-cutoff-58-g0dad96c",
-			"Rev": "0dad96c0b94f8dee039aa40467f767467392a0af"
+			"Comment": "go1.0-cutoff-59-gb269bd0",
+			"Rev": "b269bd035a727d6c1081f76e7a239a1b00674c40"
 		},
 		{
 			"ImportPath": "github.com/manucorporat/sse",

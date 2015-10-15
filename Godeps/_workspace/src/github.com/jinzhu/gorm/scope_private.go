@@ -206,15 +206,19 @@ func (scope *Scope) whereSql() (sql string) {
 	return
 }
 
+var hasCountRegexp = regexp.MustCompile(`(?i)count(.+)`)
+
 func (scope *Scope) selectSql() string {
 	if len(scope.Search.selects) == 0 {
 		return "*"
 	}
+	sql := scope.buildSelectQuery(scope.Search.selects)
+	scope.Search.countingQuery = hasCountRegexp.MatchString(sql)
 	return scope.buildSelectQuery(scope.Search.selects)
 }
 
 func (scope *Scope) orderSql() string {
-	if len(scope.Search.orders) == 0 {
+	if len(scope.Search.orders) == 0 || scope.Search.countingQuery {
 		return ""
 	}
 	return " ORDER BY " + strings.Join(scope.Search.orders, ",")
@@ -465,6 +469,17 @@ func (scope *Scope) related(value interface{}, foreignKeys ...string) *Scope {
 	return scope
 }
 
+/**
+  Return the table options string or an empty string if the table options does not exist
+*/
+func (scope *Scope) getTableOptions() string {
+	tableOptions, ok := scope.Get("gorm:table_options")
+	if !ok {
+		return ""
+	}
+	return tableOptions.(string)
+}
+
 func (scope *Scope) createJoinTable(field *StructField) {
 	if relationship := field.Relationship; relationship != nil && relationship.JoinTableHandler != nil {
 		joinTableHandler := relationship.JoinTableHandler
@@ -488,8 +503,7 @@ func (scope *Scope) createJoinTable(field *StructField) {
 					sqlTypes = append(sqlTypes, scope.Quote(relationship.AssociationForeignDBNames[idx])+" "+primaryKeySqlType)
 				}
 			}
-
-			scope.Err(scope.NewDB().Exec(fmt.Sprintf("CREATE TABLE %v (%v)", scope.Quote(joinTable), strings.Join(sqlTypes, ","))).Error)
+			scope.Err(scope.NewDB().Exec(fmt.Sprintf("CREATE TABLE %v (%v) %s", scope.Quote(joinTable), strings.Join(sqlTypes, ","), scope.getTableOptions())).Error)
 		}
 		scope.NewDB().Table(joinTable).AutoMigrate(joinTableHandler)
 	}
@@ -514,7 +528,7 @@ func (scope *Scope) createTable() *Scope {
 	if len(primaryKeys) > 0 {
 		primaryKeyStr = fmt.Sprintf(", PRIMARY KEY (%v)", strings.Join(primaryKeys, ","))
 	}
-	scope.Raw(fmt.Sprintf("CREATE TABLE %v (%v %v)", scope.QuotedTableName(), strings.Join(tags, ","), primaryKeyStr)).Exec()
+	scope.Raw(fmt.Sprintf("CREATE TABLE %v (%v %v) %s", scope.QuotedTableName(), strings.Join(tags, ","), primaryKeyStr, scope.getTableOptions())).Exec()
 	return scope
 }
 
@@ -561,7 +575,7 @@ func (scope *Scope) addForeignKey(field string, dest string, onDelete string, on
 	var keyName = fmt.Sprintf("%s_%s_%s_foreign", table, field, regexp.MustCompile("[^a-zA-Z]").ReplaceAllString(dest, "_"))
 	keyName = regexp.MustCompile("_+").ReplaceAllString(keyName, "_")
 	var query = `ALTER TABLE %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s ON DELETE %s ON UPDATE %s;`
-	scope.Raw(fmt.Sprintf(query, scope.QuotedTableName(), scope.QuoteIfPossible(keyName), scope.QuoteIfPossible(field), scope.QuoteIfPossible(dest), onDelete, onUpdate)).Exec()
+	scope.Raw(fmt.Sprintf(query, scope.QuotedTableName(), scope.QuoteIfPossible(keyName), scope.QuoteIfPossible(field), dest, onDelete, onUpdate)).Exec()
 }
 
 func (scope *Scope) removeIndex(indexName string) {
