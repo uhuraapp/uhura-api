@@ -14,26 +14,21 @@ import (
 type User struct {
 	Id            int64
 	Name          string
-	Link          string
-	Picture       string
-	Gender        string
-	Locale        string
-	GoogleId      string
 	Email         string `sql:"not null;unique"`
 	Password      string `sql:"type:varchar(100);"`
-	WelcomeMail   bool
+	Locale        string
 	CreatedAt     time.Time
+	LastVisitedAt time.Time
 	Provider      string `sql:"type:varchar(100);"`
 	ProviderId    string `sql:"type:varchar(50);"`
 	RememberToken string `sql:"type:varchar(100);unique"`
 	ApiToken      string `sql:"type:varchar(100);unique"`
-	LastVisitedAt time.Time
+	WelcomeMail   bool
 }
 
 type UserEntity struct {
 	Id         int64  `json:"id"`
 	Name       string `json:"name"`
-	Picture    string `json:"image_url"`
 	Locale     string `json:"locale"`
 	Email      string `json:"email"`
 	ProviderId string `json:"provider_id"`
@@ -110,8 +105,6 @@ func (h *UserHelper) FindUserFromOAuth(provider string, user *authenticator.User
 				Password:   uniuri.NewLen(6),
 				Provider:   provider,
 				ProviderId: user.Id,
-				Link:       user.Link,
-				Picture:    user.Picture,
 				Locale:     user.Locale,
 				Name:       user.Name,
 				ApiToken:   user.Token,
