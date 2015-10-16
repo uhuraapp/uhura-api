@@ -104,7 +104,7 @@ func (s AuthService) SignUp(c *gin.Context) {
 	if len([]rune(params.User.Password)) < 6 {
 		c.JSON(422, entities.ErrorResponse{
 			[]entities.Error{{
-				Key: "password_too_short", Message: "Password too short : Minimum amount of characters 6"},
+				Key: "password_too_short", Message: "Password too short: Minimum amount of characters 6"},
 			},
 		},
 		)
