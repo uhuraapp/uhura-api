@@ -80,16 +80,6 @@ func (s AuthService) GetUser(c *gin.Context) {
 	c.JSON(200, user)
 }
 
-type ErrorJSON struct {
-	Key     string `json:"key"`
-	Message string `json:"message"`
-	Error   string `json:"error"`
-}
-
-type ErrorResponse struct {
-	Errors []ErrorJSON `json:"errors"`
-}
-
 func (s AuthService) SignUp(c *gin.Context) {
 	decoder := json.NewDecoder(c.Request.Body)
 	var params struct {
@@ -103,19 +93,18 @@ func (s AuthService) SignUp(c *gin.Context) {
 	decoder.Decode(&params)
 
 	if params.User.Email == "" || params.User.Password == "" || params.User.Name == "" {
-		c.JSON(422, ErrorResponse{
-			[]ErrorJSON{{
+		c.JSON(422, entities.ErrorResponse{
+			[]entities.Error{{
 				Key: "fields_required", Message: "Email, Password and Name is required"},
 			},
-		},
-		)
+		})
 		return
 	}
 
-	if len([]rune(params.User.Password)) < 5 {
-		c.JSON(422, ErrorResponse{
-			[]ErrorJSON{{
-				Key: "password_too_short", Message: "Password too short"},
+	if len([]rune(params.User.Password)) < 6 {
+		c.JSON(422, entities.ErrorResponse{
+			[]entities.Error{{
+				Key: "password_too_short", Message: "Password too short : Minimum amount of characters 6"},
 			},
 		},
 		)
@@ -125,9 +114,9 @@ func (s AuthService) SignUp(c *gin.Context) {
 	password, err := authenticator.GenerateHash(params.User.Password)
 
 	if err != nil {
-		c.JSON(422, ErrorResponse{
-			[]ErrorJSON{{
-				Key: "generate_hash_password_error", Message: "Internal server error", Error: err.Error()},
+		c.JSON(422, entities.ErrorResponse{
+			[]entities.Error{{
+				Key: "generate_hash_password_error", Message: "Internal server error: Could not encrypt your password ", Error: err.Error()},
 			},
 		})
 		return
@@ -144,20 +133,19 @@ func (s AuthService) SignUp(c *gin.Context) {
 
 	err = s.DB.Table(user.TableName()).Where("email = ?", user.Email).First(&models.User{}).Error
 	if err == nil {
-		c.JSON(422, ErrorResponse{
-			[]ErrorJSON{{
-				Key: "already_registrated", Message: "Email exists in database"},
+		c.JSON(422, entities.ErrorResponse{
+			[]entities.Error{{
+				Key: "already_registrated", Message: "Email already exists in the system, try log in or other email"},
 			},
-		},
-		)
+		})
 		return
 	}
 
 	err = s.DB.Table(user.TableName()).Save(&user).Error
 	if err != nil {
-		c.JSON(422, ErrorResponse{
-			[]ErrorJSON{{
-				Key: "internal_server_error", Message: "Internal server error", Error: err.Error()},
+		c.JSON(422, entities.ErrorResponse{
+			[]entities.Error{{
+				Key: "internal_server_error", Message: "Internal server error: try again", Error: err.Error()},
 			},
 		})
 		return
