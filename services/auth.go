@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	"time"
 
 	"bitbucket.org/dukex/uhura-api/entities"
@@ -128,17 +129,17 @@ func (s AuthService) SignUp(c *gin.Context) {
 			[]ErrorJSON{{
 				Key: "generate_hash_password_error", Message: "Internal server error", Error: err.Error()},
 			},
-		},
-		)
+		})
 		return
 	}
 
 	user := models.User{
-		Email:    params.User.Email,
-		Password: password,
-		Name:     params.User.Name,
-		Provider: "email",
-		ApiToken: authenticator.NewUserToken(),
+		Email:         params.User.Email,
+		Password:      password,
+		Name:          params.User.Name,
+		Provider:      "email",
+		ApiToken:      authenticator.NewUserToken(),
+		RememberToken: authenticator.NewUserToken(),
 	}
 
 	err = s.DB.Table(user.TableName()).Where("email = ?", user.Email).First(&models.User{}).Error
@@ -152,7 +153,20 @@ func (s AuthService) SignUp(c *gin.Context) {
 		return
 	}
 
-	s.DB.Table(user.TableName()).Save(&user)
+	err = s.DB.Table(user.TableName()).Save(&user).Error
+	if err != nil {
+		c.JSON(422, ErrorResponse{
+			[]ErrorJSON{{
+				Key: "internal_server_error", Message: "Internal server error", Error: err.Error()},
+			},
+		})
+		return
+	}
+
+	auth, _ := s.getAuth(c)
+	userId := strconv.Itoa(int(user.Id))
+	session := auth.Login(c.Request, userId)
+	session.Save(c.Request, c.Writer)
 
 	c.JSON(http.StatusCreated, struct {
 		Id int64 `json:"id"`
