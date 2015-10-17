@@ -12,18 +12,20 @@ import (
 )
 
 type User struct {
-	Id            int64
-	Name          string
-	Email         string `sql:"not null;unique"`
-	Password      string `sql:"type:varchar(100);"`
-	Locale        string
-	CreatedAt     time.Time
-	LastVisitedAt time.Time
-	Provider      string `sql:"type:varchar(100);"`
-	ProviderId    string `sql:"type:varchar(50);"`
-	RememberToken string `sql:"type:varchar(100);unique"`
-	ApiToken      string `sql:"type:varchar(100);unique"`
-	WelcomeMail   bool
+	Id                           int64
+	Name                         string
+	Email                        string `sql:"not null;unique"`
+	Password                     string `sql:"type:varchar(100);"`
+	Locale                       string
+	CreatedAt                    time.Time
+	LastVisitedAt                time.Time
+	Provider                     string `sql:"type:varchar(100);"`
+	ProviderId                   string `sql:"type:varchar(50);"`
+	RememberToken                string `sql:"type:varchar(100);unique"`
+	ApiToken                     string `sql:"type:varchar(100);unique"`
+	WelcomeMail                  bool
+	AgreeWithTheTermsAndPolicyAt time.Time
+	AgreeWithTheTermsAndPolicyIn string
 }
 
 type UserEntity struct {
@@ -58,23 +60,24 @@ func (h *UserHelper) PasswordByEmail(email string) (string, bool) {
 
 	return u.Password, true
 }
-func (h *UserHelper) FindUserDataByEmail(email string) (string, bool) {
+func (h *UserHelper) FindUserDataByEmail(email string) (string, string, bool) {
 	var user UserEntity
 	err := h.DB.Table(User{}.TableName()).
 		Where("email = ? ", email).First(&user).Error
 
 	if err != nil {
-		return "", false
+		return "", "", false
 	}
 
 	userJSON, err := json.Marshal(&user)
 
 	if err != nil {
-		return "", false
+		return "", "", false
 	}
 
-	return string(userJSON), true
+	return string(userJSON), strconv.Itoa(int(user.Id)), true
 }
+
 func (h *UserHelper) FindUserByToken(token string) (string, bool) {
 	var u struct {
 		Id string
