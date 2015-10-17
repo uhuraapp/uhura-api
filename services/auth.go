@@ -68,11 +68,7 @@ func (s AuthService) GetUser(c *gin.Context) {
 	}
 
 	if user.ApiToken == "" {
-		token := authenticator.NewUserToken()
-		hasher := md5.New()
-		hasher.Write([]byte(token + user.Email))
-		user.ApiToken = hex.EncodeToString(hasher.Sum(nil))
-		s.DB.Table(models.User{}.TableName()).Where("id = ?", userId).Update("api_token", user.ApiToken)
+		s.createUserToken(user.Email)
 	}
 
 	s.DB.Table(models.User{}.TableName()).Where("id = ?", userId).Update("last_visited_at", time.Now().Format(time.RubyDate))
@@ -127,7 +123,6 @@ func (s AuthService) SignUp(c *gin.Context) {
 		Password:      password,
 		Name:          params.User.Name,
 		Provider:      "email",
-		ApiToken:      authenticator.NewUserToken(),
 		RememberToken: authenticator.NewUserToken(),
 	}
 
@@ -156,6 +151,8 @@ func (s AuthService) SignUp(c *gin.Context) {
 	session := auth.Login(c.Request, userId)
 	session.Save(c.Request, c.Writer)
 
+	s.createUserToken(user.Email)
+
 	c.JSON(http.StatusCreated, struct {
 		Id int64 `json:"id"`
 	}{user.Id})
@@ -181,4 +178,12 @@ func (s AuthService) getAuth(c *gin.Context) (auth *authenticator.Auth, err erro
 	}
 	auth = tempInterface.(*authenticator.Auth)
 	return
+}
+
+func (s AuthService) createUserToken(email string) {
+	token := authenticator.NewUserToken()
+	hasher := md5.New()
+	hasher.Write([]byte(token + email))
+	apiToken := hex.EncodeToString(hasher.Sum(nil))
+	s.DB.Table(models.User{}.TableName()).Where("email = ?", email).Update("api_token", apiToken)
 }
