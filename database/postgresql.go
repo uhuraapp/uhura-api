@@ -27,9 +27,7 @@ func NewPostgresql() gorm.DB {
 
 	database.LogMode(os.Getenv("DEBUG") == "true")
 
-	if os.Getenv("MIGRATIONS") == "true" {
-		Migrations(database)
-	}
+	Migrations(database)
 
 	return database
 }
