@@ -76,6 +76,37 @@ func (s AuthService) GetUser(c *gin.Context) {
 	c.JSON(200, user)
 }
 
+func (s AuthService) UpdateUser(c *gin.Context) {
+	decoder := json.NewDecoder(c.Request.Body)
+	var params struct {
+		User struct {
+			Name string `json:"name"`
+		} `json:"user"`
+	}
+
+	decoder.Decode(&params)
+
+	var user entities.User
+	auth, _ := s.getAuth(c)
+
+	userId, ok := auth.CurrentUser(c.Request)
+	if !ok {
+		c.AbortWithStatus(404)
+		return
+	}
+
+	err := s.DB.Table(models.User{}.TableName()).Where("id = ?", userId).First(&user).Error
+	if err != nil {
+		c.AbortWithStatus(404)
+		return
+	}
+
+	s.DB.Table(models.User{}.TableName()).Where("id = ?", userId).Update("name", params.User.Name)
+	s.DB.Table(models.User{}.TableName()).Where("id = ?", userId).First(&user)
+
+	c.JSON(200, user)
+}
+
 func (s AuthService) SignUp(c *gin.Context) {
 	decoder := json.NewDecoder(c.Request.Body)
 	var params struct {

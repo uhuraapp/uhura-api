@@ -49,6 +49,7 @@ func Mount(_r *gin.RouterGroup) {
 		r.GET("/auth/:provider/callback", auth.ByProviderCallback)
 
 		r.GET("/user", auth.GetUser)
+		r.PUT("/user", auth.UpdateUser)
 		r.POST("/users/sign_in", auth.ByEmailPassword)
 		r.GET("/users/logout", auth.Logout)
 		r.POST("/users", auth.SignUp)
