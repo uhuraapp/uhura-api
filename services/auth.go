@@ -34,7 +34,9 @@ func (s AuthService) ByProvider(c *gin.Context) {
 
 func (s AuthService) ByEmailPassword(c *gin.Context) {
 	auth, _ := s.getAuth(c)
-	auth.SignIn(c.Writer, c.Request)
+	if userId, ok := auth.SignIn(c.Writer, c.Request); ok {
+		go s.setAgree(userId)
+	}
 	return
 }
 
@@ -44,6 +46,7 @@ func (s AuthService) ByProviderCallback(c *gin.Context) {
 	if err == nil {
 		session := auth.Login(c.Request, userId)
 		session.Save(c.Request, c.Writer)
+		go s.setAgree(userId)
 		// 	go helpers.NewEvent(userIdint, "login", map[string]interface{}{})
 	}
 
@@ -183,6 +186,7 @@ func (s AuthService) SignUp(c *gin.Context) {
 	session.Save(c.Request, c.Writer)
 
 	s.createUserToken(user.Email)
+	go s.setAgree(strconv.Itoa(int(user.Id)))
 
 	c.JSON(http.StatusCreated, struct {
 		Id int64 `json:"id"`
@@ -217,4 +221,16 @@ func (s AuthService) createUserToken(email string) {
 	hasher.Write([]byte(token + email))
 	apiToken := hex.EncodeToString(hasher.Sum(nil))
 	s.DB.Table(models.User{}.TableName()).Where("email = ?", email).Update("api_token", apiToken)
+}
+
+func (s AuthService) setAgree(id string) {
+	var user models.User
+
+	err := s.DB.Table(models.User{}.TableName()).
+		Where("id = ?", id).
+		First(&user).Error
+
+	if err == nil && user.AgreeWithTheTermsAndPolicyAt.IsZero() {
+		s.DB.Table(models.User{}.TableName()).Where("id = ?", id).Update("agree_with_the_terms_and_policy_at", time.Now())
+	}
 }
