@@ -74,6 +74,8 @@ func (s AuthService) GetUser(c *gin.Context) {
 		s.createUserToken(user.Email)
 	}
 
+	user.OptIn = !user.OptInAt.IsZero()
+
 	s.DB.Table(models.User{}.TableName()).Where("id = ?", userId).Update("last_visited_at", time.Now().Format(time.RubyDate))
 
 	c.JSON(200, user)
@@ -83,7 +85,8 @@ func (s AuthService) UpdateUser(c *gin.Context) {
 	decoder := json.NewDecoder(c.Request.Body)
 	var params struct {
 		User struct {
-			Name string `json:"name"`
+			Name  string `json:"name"`
+			OptIn bool   `json:"optin"`
 		} `json:"user"`
 	}
 
@@ -104,9 +107,19 @@ func (s AuthService) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	s.DB.Table(models.User{}.TableName()).Where("id = ?", userId).Update("name", params.User.Name)
+	if !params.User.OptIn {
+		user.OptInAt = time.Time{}
+	} else if params.User.OptIn && user.OptInAt.IsZero() {
+		user.OptInAt = time.Now()
+	}
+
+	s.DB.Table(models.User{}.TableName()).Where("id = ?", userId).Update(map[string]interface{}{
+		"name":      params.User.Name,
+		"opt_in_at": user.OptInAt,
+	})
 	s.DB.Table(models.User{}.TableName()).Where("id = ?", userId).First(&user)
 
+	user.OptIn = !user.OptInAt.IsZero()
 	c.JSON(200, user)
 }
 

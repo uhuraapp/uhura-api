@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"time"
 
+	"bitbucket.org/dukex/uhura-api/entities"
+
 	"github.com/dchest/uniuri"
 	authenticator "github.com/dukex/go-auth"
 	"github.com/jinzhu/gorm"
@@ -26,15 +28,7 @@ type User struct {
 	WelcomeMail                  bool
 	AgreeWithTheTermsAndPolicyAt time.Time
 	AgreeWithTheTermsAndPolicyIn string
-}
-
-type UserEntity struct {
-	Id         int64  `json:"id"`
-	Name       string `json:"name"`
-	Locale     string `json:"locale"`
-	Email      string `json:"email"`
-	ProviderId string `json:"provider_id"`
-	ApiToken   string `json:"token"`
+	OptInAt                      time.Time
 }
 
 func (self User) TableName() string {
@@ -60,14 +54,17 @@ func (h *UserHelper) PasswordByEmail(email string) (string, bool) {
 
 	return u.Password, true
 }
+
 func (h *UserHelper) FindUserDataByEmail(email string) (string, string, bool) {
-	var user UserEntity
+	var user entities.User
 	err := h.DB.Table(User{}.TableName()).
 		Where("email = ? ", email).First(&user).Error
 
 	if err != nil {
 		return "", "", false
 	}
+
+	user.OptIn = !user.OptInAt.IsZero()
 
 	userJSON, err := json.Marshal(&user)
 
