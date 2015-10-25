@@ -71,7 +71,7 @@ func (s ChannelsService) getEpisodes(channelID int64, channelUri string, userId 
 		ids = append(ids, e.Id)
 	}
 
-	entities.SetListenAttributesToEpisode(s.DB, userId, episodes, channelUri)
+	models.SetListenAttributesToEpisode(s.DB, userId, episodes, channelUri)
 
 	return
 }

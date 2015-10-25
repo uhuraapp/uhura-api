@@ -41,7 +41,7 @@ func (s EpisodeService) GetPaged(c *gin.Context) {
 		Where("id = ?", params.Get("channel_id")).
 		Pluck("uri", &channelURI)
 
-	entities.SetListenAttributesToEpisode(s.DB, userId, episodes, channelURI[0])
+	models.SetListenAttributesToEpisode(s.DB, userId, episodes, channelURI[0])
 
 	c.JSON(200, map[string]interface{}{"episodes": episodes})
 }
@@ -64,7 +64,6 @@ func (s EpisodeService) Played(c *gin.Context) {
 	}).FirstOrCreate(&models.Listened{})
 
 	go helpers.NewEvent(_userId.(string), "listened", map[string]interface{}{"episode_id": episode.Id, "channel_id": episode.ChannelId})
-
 
 	c.JSON(201, gin.H{})
 }
