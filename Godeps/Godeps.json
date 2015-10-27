@@ -27,8 +27,8 @@
 		},
 		{
 			"ImportPath": "github.com/dukex/go-auth",
-			"Comment": "v1.0.0-13-g8a0710d",
-			"Rev": "8a0710dedf6dc170b4e280c0b0d897dcdcf0d61a"
+			"Comment": "v1.0.0-16-gd4c7ccd",
+			"Rev": "d4c7ccd66a8cbf78111c8340d4656dc6432d2c05"
 		},
 		{
 			"ImportPath": "github.com/dukex/mixpanel",
