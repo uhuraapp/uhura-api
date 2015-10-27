@@ -217,6 +217,13 @@ func (s AuthService) Logout(c *gin.Context) {
 	c.Data(200, "", []byte(""))
 }
 
+func (s AuthService) DeleteUser(c *gin.Context) {
+	auth, _ := s.getAuth(c)
+	userId, _ := auth.CurrentUser(c.Request)
+	s.DB.Table(models.User{}.TableName()).Where("id = ?", userId).Delete(&models.User{})
+	c.Data(200, "", []byte("{}"))
+}
+
 func (s AuthService) getAuth(c *gin.Context) (auth *authenticator.Auth, err error) {
 	var tempInterface interface{}
 	var ok bool

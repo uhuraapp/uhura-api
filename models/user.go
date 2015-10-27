@@ -29,6 +29,7 @@ type User struct {
 	AgreeWithTheTermsAndPolicyAt time.Time
 	AgreeWithTheTermsAndPolicyIn string
 	OptInAt                      time.Time
+	DeletedAt                    time.Time
 }
 
 func (self User) TableName() string {
@@ -40,13 +41,11 @@ type UserHelper struct {
 }
 
 func (h *UserHelper) PasswordByEmail(email string) (string, bool) {
-	var u struct {
-		Password string
-	}
+	var u User
 
 	err := h.DB.Table(User{}.TableName()).
 		Select("password").
-		Where("email = ? ", email).Scan(&u).Error
+		Where("email = ? ", email).First(&u).Error
 
 	if err != nil {
 		return "", false
@@ -57,6 +56,7 @@ func (h *UserHelper) PasswordByEmail(email string) (string, bool) {
 
 func (h *UserHelper) FindUserDataByEmail(email string) (string, string, bool) {
 	var user entities.User
+
 	err := h.DB.Table(User{}.TableName()).
 		Where("email = ? ", email).First(&user).Error
 
@@ -76,19 +76,18 @@ func (h *UserHelper) FindUserDataByEmail(email string) (string, string, bool) {
 }
 
 func (h *UserHelper) FindUserByToken(token string) (string, bool) {
-	var u struct {
-		Id string
-	}
+	var u User
 
 	err := h.DB.Table(User{}.TableName()).
 		Select("id").
-		Where("api_token = ? ", token).Scan(&u).Error
+		Where("api_token = ? ", token).First(&u).Error
 
 	if err != nil {
 		return "", false
 	}
+	id := strconv.Itoa(int(u.Id))
 
-	return u.Id, true
+	return id, true
 }
 func (h *UserHelper) FindUserFromOAuth(provider string, user *authenticator.User, rawResponse *http.Response) (userID string, err error) {
 	var u struct {

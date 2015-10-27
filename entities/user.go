@@ -11,4 +11,5 @@ type User struct {
 	ApiToken   string    `json:"token"`
 	OptIn      bool      `json:"optin"`
 	OptInAt    time.Time `json:"-"`
+	DeletedAt  time.Time `json:"-"`
 }

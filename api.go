@@ -50,6 +50,7 @@ func Mount(_r *gin.RouterGroup) {
 
 		r.GET("/user", auth.GetUser)
 		r.PUT("/user", auth.UpdateUser)
+		r.DELETE("/user", auth.DeleteUser)
 		r.POST("/users/sign_in", auth.ByEmailPassword)
 		r.GET("/users/logout", auth.Logout)
 		r.POST("/users", auth.SignUp)
