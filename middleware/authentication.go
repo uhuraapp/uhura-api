@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"net/http"
 	"os"
 
 	"bitbucket.org/dukex/uhura-api/models"
@@ -35,7 +36,7 @@ func Protected() gin.HandlerFunc {
 			c.Set("user_id", userId)
 			c.Next()
 		} else {
-			c.AbortWithStatus(403)
+			c.AbortWithStatus(http.StatusUnauthorized)
 		}
 	}
 }
