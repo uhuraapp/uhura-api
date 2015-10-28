@@ -21,6 +21,28 @@ func NewEpisodesService(db gorm.DB) EpisodeService {
 	return EpisodeService{DB: db}
 }
 
+func (s EpisodeService) Get(c *gin.Context) {
+	var episode entities.Episode
+	var channelURI []string
+	episodeId, _ := strconv.Atoi(c.Params.ByName("id"))
+	userId, _ := helpers.GetUser(c)
+
+	err := s.DB.Table(models.Episode{}.TableName()).Where("id = ?", episodeId).First(&episode).Error
+	if err != nil {
+		c.AbortWithStatus(404)
+		return
+	}
+
+	s.
+		DB.Table(models.Channel{}.TableName()).
+		Where("id = ?", episode.ChannelId).
+		Pluck("uri", &channelURI)
+
+	models.SetListenAttributesToEpisode(s.DB, userId, []*entities.Episode{&episode}, channelURI[0])
+
+	c.JSON(200, map[string]interface{}{"episode": episode})
+}
+
 func (s EpisodeService) GetPaged(c *gin.Context) {
 	var episodes []*entities.Episode
 	var channelURI []string
