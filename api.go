@@ -31,6 +31,7 @@ func Mount(_r *gin.RouterGroup) {
 	auth := services.NewAuthService(DB)
 	categories := services.NewCategoriesService(DB)
 	parser := services.NewParser(DB)
+	subscriptions := services.NewSubscriptionsService(DB)
 
 	_r.Use(middleware.Authentication(DB))
 
@@ -55,19 +56,18 @@ func Mount(_r *gin.RouterGroup) {
 		r.GET("/users/logout", auth.Logout)
 		r.POST("/users", auth.SignUp)
 
+		r.GET("/subscriptions/:key", subscriptions.Get)
+
 		r.GET("/users/subscriptions", needAuth, userSubscriptions.Index)
 		r.POST("/users/subscriptions", needAuth, userSubscriptions.Create)
 		r.GET("/users/subscriptions/:uri", needAuth, userSubscriptions.Show)
 		r.DELETE("/users/subscriptions/:uri", needAuth, userSubscriptions.Delete)
 
 		r.GET("/episodes", episodes.GetPaged)
+		r.GET("/episodes/:id", episodes.Get)
 
 		r.POST("/episodes/:id/played", needAuth, episodes.Played)
 		r.DELETE("/episodes/:id/played", needAuth, episodes.Unlistened)
-
-		// deprecated
-		r.POST("/episodes/:id/listened", needAuth, episodes.Played)
-		r.DELETE("/episodes/:id/listened", needAuth, episodes.Unlistened)
 
 		r.GET("/episodes/:id/download", needAuth, episodes.Download)
 		r.HEAD("/episodes/:id/download", needAuth, episodes.Download)

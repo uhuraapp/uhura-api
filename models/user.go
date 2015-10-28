@@ -36,6 +36,17 @@ func (self User) TableName() string {
 	return "users"
 }
 
+type Profile struct {
+	ID       int64
+	Key      string
+	Username string
+	UserID   int64
+}
+
+func (self Profile) TableName() string {
+	return "profiles"
+}
+
 type UserHelper struct {
 	DB gorm.DB
 }
