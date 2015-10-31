@@ -32,6 +32,7 @@ func Mount(_r *gin.RouterGroup) {
 	categories := services.NewCategoriesService(DB)
 	parser := services.NewParser(DB)
 	subscriptions := services.NewSubscriptionsService(DB)
+	profile := services.NewProfileService(DB)
 
 	_r.Use(middleware.Authentication(DB))
 
@@ -55,6 +56,10 @@ func Mount(_r *gin.RouterGroup) {
 		r.POST("/users/sign_in", auth.ByEmailPassword)
 		r.GET("/users/logout", auth.Logout)
 		r.POST("/users", auth.SignUp)
+
+		r.POST("/profiles", needAuth, profile.Create)
+		r.GET("/me", needAuth, profile.Me)
+		r.GET("/profiles/:key", profile.Get)
 
 		r.GET("/subscriptions/:key", subscriptions.Get)
 
