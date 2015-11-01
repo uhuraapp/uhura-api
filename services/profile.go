@@ -3,7 +3,9 @@ package services
 import (
 	"strconv"
 
+	"bitbucket.org/dukex/uhura-api/database"
 	"bitbucket.org/dukex/uhura-api/entities"
+	"bitbucket.org/dukex/uhura-api/helpers"
 	"bitbucket.org/dukex/uhura-api/models"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
@@ -20,6 +22,10 @@ func NewProfileService(db gorm.DB) ProfileService {
 func (s ProfileService) Me(c *gin.Context) {
 	_userID, _ := c.Get("user_id")
 	userID := _userID.(string)
+
+	if helpers.UseHTTPCache("me:"+userID, database.CACHE, c) {
+		return
+	}
 
 	var profile entities.Profile
 
@@ -63,13 +69,20 @@ func (s ProfileService) Create(c *gin.Context) {
 func (s ProfileService) Get(c *gin.Context) {
 	id := c.Params.ByName("key")
 
-	var profile entities.Profile
-	err := s.DB.Table(models.Profile{}.TableName()).Where("key = ?", id).First(&profile).Error
-
-	if err == nil {
-		c.JSON(200, gin.H{"profile": profile})
+	if helpers.UseHTTPCache("profile-get:"+id, database.CACHE, c) {
 		return
 	}
 
-	c.AbortWithStatus(404)
+	var profile entities.Profile
+	err := s.DB.Table(models.Profile{}.TableName()).Where("key = ?", id).First(&profile).Error
+
+	if err != nil {
+		c.AbortWithStatus(404)
+		return
+	}
+
+	subscriptions, ids := helpers.UserSubscriptions(profile.UserID, s.DB, models.Subscription{}.TableName(), models.Channel{}.TableName(), id)
+	profile.Channels = ids
+
+	c.JSON(200, gin.H{"profile": profile, "channels": subscriptions})
 }

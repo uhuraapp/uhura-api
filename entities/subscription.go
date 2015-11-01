@@ -7,6 +7,7 @@ type Subscription struct {
 	ImageUrl   string `json:"image_url"`
 	ToView     int64  `json:"to_view"`
 	Subscribed bool   `json:"subscribed"`
+	ProfileID  string `json:"profile_id"`
 }
 
 // func (s *Subscription) GetToView(database gorm.DB, userId string) int64 {

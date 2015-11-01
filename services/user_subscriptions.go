@@ -2,7 +2,6 @@ package services
 
 import (
 	"encoding/json"
-	"net/http"
 	"strconv"
 	"time"
 
@@ -27,41 +26,15 @@ func NewUserSubscriptionService(db gorm.DB) UserSubscriptionService {
 
 // Index TODO
 func (s UserSubscriptionService) Index(c *gin.Context) {
-	var ids []int
-	subscriptions := make([]entities.Subscription, 0)
-
 	_userID, _ := c.Get("user_id")
 	userID := _userID.(string)
 
-	t := time.Now()
-
-	cacheRes, err := database.CACHE.Value("s:" + userID)
-	if err == nil {
-		t = *cacheRes.Data().(*time.Time)
-	}
-
-	if helpers.CacheHeader(c, t) {
-		c.AbortWithStatus(http.StatusNotModified)
+	if helpers.UseHTTPCache("user-subscriptions-index:"+userID, database.CACHE, c) {
 		return
 	}
 
-	s.DB.Table(models.Subscription{}.TableName()).Where("user_id = ?", userID).
-		Order("channel_id").
-		Pluck("channel_id", &ids)
+	subscriptions, _ := helpers.UserSubscriptions(userID, s.DB, models.Subscription{}.TableName(), models.Channel{}.TableName(), "")
 
-	if len(ids) > 0 {
-		s.DB.Table(models.Channel{}.TableName()).Where("id in (?)", ids).Order("title ASC").Find(&subscriptions)
-	}
-
-	// for i, _ := range subscriptions {
-	//	subscriptions[i].Uri = channel.FixUri()
-	//	go subscriptions[i].SetSubscribed(userId)
-	//	subscriptions[i].SetEpisodesIds()
-	//	subscriptions[i].ToView = subscriptions[i].GetToView(s.DB, userId)
-	//	subscriptions[i].Subscribed = true
-	// }
-
-	database.CACHE.Add("s:"+userID, ((7 * 24) * time.Hour), &t)
 	c.JSON(200, gin.H{"subscriptions": subscriptions})
 }
 
