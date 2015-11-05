@@ -48,10 +48,14 @@ func (self Profile) TableName() string {
 }
 
 func ProfileKey(DB gorm.DB, userID string) string {
-	var key string
+	var key []string
 	DB.Table(Profile{}.TableName()).Where("user_id = ?", userID).Pluck("key", &key)
 
-	return key
+	if len(key) == 0 {
+	  return ""
+	}
+	
+	return key[0]
 }
 
 type UserHelper struct {
