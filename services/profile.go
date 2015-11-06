@@ -63,7 +63,10 @@ func (s ProfileService) Create(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, gin.H{"profile": profile})
+	subscriptions, ids := helpers.UserSubscriptions(profile.UserID, s.DB, models.Subscription{}.TableName(), models.Channel{}.TableName(), profile.Key)
+	profile.Channels = ids
+
+	c.JSON(200, gin.H{"profile": profile, "channels": subscriptions})
 }
 
 func (s ProfileService) Get(c *gin.Context) {
