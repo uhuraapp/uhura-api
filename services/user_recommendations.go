@@ -43,5 +43,5 @@ func (r UserRecommendationService) Index(c *gin.Context) {
 		r.DB.Table(models.Channel{}.TableName()).Where("id in (?)", ids).Find(&channels)
 	}
 
-	c.JSON(200, gin.H{"channels": channels})
+	c.JSON(200, gin.H{"recommendations": channels})
 }
