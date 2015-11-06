@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -52,9 +53,9 @@ func ProfileKey(DB gorm.DB, userID string) string {
 	DB.Table(Profile{}.TableName()).Where("user_id = ?", userID).Pluck("key", &key)
 
 	if len(key) == 0 {
-	  return ""
+		return ""
 	}
-	
+
 	return key[0]
 }
 
@@ -89,11 +90,12 @@ func (h *UserHelper) FindUserDataByEmail(email string) (string, string, bool) {
 	userId := strconv.Itoa(int(user.Id))
 
 	user.OptIn = !user.OptInAt.IsZero()
-	user.ProfileKey = ProfileKey(h.DB, userId)
+	// user.ProfileKey = ProfileKey(h.DB, userId)
 
 	userJSON, err := json.Marshal(&user)
 
 	if err != nil {
+		log.Println("ERROR", err)
 		return "", "", false
 	}
 
