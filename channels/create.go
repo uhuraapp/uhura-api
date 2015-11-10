@@ -50,6 +50,36 @@ func Create(database gorm.DB, url string) (*entities.Channel, bool) {
 	return &channel, ok
 }
 
+func TranslateFromFeedToEntity(entity entities.Channel, channel *parser.Channel) entities.Channel {
+	entity.Title = channel.Title
+	entity.Description = channel.Description
+	entity.Copyright = channel.Copyright
+	entity.ImageUrl = channel.Image
+	entity.Uri = helpers.MakeUri(channel.Title)
+	entity.UpdatedAt = time.Now()
+	return entity
+}
+
+func TranslateEpisodesFromFeedToEntity(channel *parser.Channel) ([]entities.Episode, []int64) {
+	episodes := make([]entities.Episode, 0)
+	ids := make([]int64, 0)
+
+	for i, episode := range channel.Episodes {
+		s := int64(0)
+		id := int64(i) + time.Now().Unix()
+		episodes = append(episodes, entities.Episode{
+			Id:          id,
+			Title:       episode.Title,
+			Description: episode.Description,
+			SourceUrl:   episode.Source,
+			StoppedAt:   &s,
+		})
+		ids = append(ids, id)
+	}
+
+	return episodes, ids
+}
+
 func TranslateFromFeed(model models.Channel, channel *parser.Channel) models.Channel {
 	model.Title = channel.Title
 	model.Description = channel.Description

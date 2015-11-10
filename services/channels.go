@@ -1,11 +1,14 @@
 package services
 
 import (
+	"strings"
 	"time"
 
+	"bitbucket.org/dukex/uhura-api/channels"
 	"bitbucket.org/dukex/uhura-api/entities"
 	"bitbucket.org/dukex/uhura-api/helpers"
 	"bitbucket.org/dukex/uhura-api/models"
+	"bitbucket.org/dukex/uhura-api/parser"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 )
@@ -21,13 +24,35 @@ func NewChannelsService(db gorm.DB) ChannelsService {
 func (s ChannelsService) Get(c *gin.Context) {
 	var channel entities.Channel
 	var episodes []*entities.Episode
-	var userId int
 
-	channelURI := c.Params.ByName("uri")
-
-	userId, _ = helpers.GetUser(c)
+	uri := c.Params.ByName("uri")
+	channelURI := strings.Replace(uri, "/", "", 1)
 
 	err := s.DB.Table(models.Channel{}.TableName()).Where("uri = ?", channelURI).First(&channel).Error
+
+	if err == gorm.RecordNotFound {
+		url, err := helpers.ParseURL(uri)
+
+		if err != nil {
+			c.AbortWithStatus(404)
+			return
+		}
+
+		feed, err := parser.URL(url)
+
+		if err != nil {
+			c.AbortWithStatus(404)
+			return
+		}
+
+		channel = channels.TranslateFromFeedToEntity(channel, feed[0])
+
+		episodes, ids := channels.TranslateEpisodesFromFeedToEntity(feed[0])
+		channel.Episodes = ids
+
+		c.JSON(200, gin.H{"channel": channel, "episodes": episodes})
+		return
+	}
 
 	if err != nil {
 		c.AbortWithStatus(404)
@@ -39,6 +64,7 @@ func (s ChannelsService) Get(c *gin.Context) {
 		return
 	}
 
+	userId, _ := helpers.GetUser(c)
 	channel.Episodes, episodes = s.getEpisodes(channel.Id, channelURI, userId)
 
 	if userId != 0 {

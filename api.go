@@ -42,8 +42,8 @@ func Mount(_r *gin.RouterGroup) {
 	{
 		r.OPTIONS("*action", func(c *gin.Context) { c.Data(200, "", []byte{}) })
 
-		r.GET("/channels/:uri", channels.Get)
-		r.GET("/channels/:uri/open", channels.Open)
+		r.GET("/channels/*uri", channels.Get)
+		// r.GET("/channels/:uri/open", channels.Open)
 
 		r.GET("/parser", parser.ByURL)
 
