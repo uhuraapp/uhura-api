@@ -35,20 +35,8 @@
 			"Rev": "353602d3c3d2779e4b1d73c6d86f33eee018cf4e"
 		},
 		{
-			"ImportPath": "github.com/dukex/too",
-			"Rev": "619faef0462cb6548e7d2f2f989dbd21be4d8820"
-		},
-		{
 			"ImportPath": "github.com/fiam/gounidecode/unidecode",
 			"Rev": "8deddbd03fec2c28969266e52f27b6fb22be1823"
-		},
-		{
-			"ImportPath": "github.com/garyburd/redigo/internal",
-			"Rev": "6ece6e0a09f28cc399b21550cbf37ab39ba63cce"
-		},
-		{
-			"ImportPath": "github.com/garyburd/redigo/redis",
-			"Rev": "6ece6e0a09f28cc399b21550cbf37ab39ba63cce"
 		},
 		{
 			"ImportPath": "github.com/gin-gonic/gin",
@@ -81,8 +69,8 @@
 		},
 		{
 			"ImportPath": "github.com/lib/pq",
-			"Comment": "go1.0-cutoff-59-gb269bd0",
-			"Rev": "b269bd035a727d6c1081f76e7a239a1b00674c40"
+			"Comment": "go1.0-cutoff-61-g83c4f41",
+			"Rev": "83c4f410d0aed80a0f44bac6a576a7f2435791f3"
 		},
 		{
 			"ImportPath": "github.com/manucorporat/sse",
