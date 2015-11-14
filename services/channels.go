@@ -50,8 +50,12 @@ func (s ChannelsService) getChannel(c *gin.Context) (channel entities.Channel, n
 		if uhuraID := FindUhuraID(s.DB, channelF); uhuraID != "" {
 			err = s.DB.Table(models.Channel{}.TableName()).Where("uri = ?", uhuraID).First(&channel).Error
 			if err == nil {
+				log.Println("ERRR", err)
+
 				return channel, false, nil
 			}
+		} else {
+			// go channels.Create(s.DB, url.String())
 		}
 
 		channel = channels.TranslateFromFeedToEntity(channel, feedChannel)

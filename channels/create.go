@@ -55,6 +55,7 @@ func TranslateFromFeedToEntity(entity entities.Channel, channel *parser.Channel)
 }
 
 func TranslateEpisodesFromFeedToEntity(channel *parser.Channel) ([]*entities.Episode, []int64) {
+	log.Debug("Episodes: %s", channel.Episodes)
 	episodes := make([]*entities.Episode, 0)
 	ids := make([]int64, 0)
 
