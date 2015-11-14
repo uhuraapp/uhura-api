@@ -51,11 +51,11 @@ func Create(database gorm.DB, url string) (*entities.Channel, bool) {
 }
 
 func TranslateFromFeedToEntity(entity entities.Channel, channel *parser.Channel) entities.Channel {
+	entity.Uri = channel.ID
 	entity.Title = channel.Title
 	entity.Description = channel.Description
 	entity.Copyright = channel.Copyright
 	entity.ImageUrl = channel.Image
-	entity.Uri = helpers.MakeUri(channel.Title)
 	entity.UpdatedAt = time.Now()
 	return entity
 }
@@ -73,6 +73,7 @@ func TranslateEpisodesFromFeedToEntity(channel *parser.Channel) ([]entities.Epis
 			Description: episode.Description,
 			SourceUrl:   episode.Source,
 			StoppedAt:   &s,
+			ChannelUri:  channel.ID,
 		})
 		ids = append(ids, id)
 	}
