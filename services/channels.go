@@ -24,7 +24,7 @@ func NewChannelsService(db gorm.DB) ChannelsService {
 	return ChannelsService{DB: db}
 }
 
-func (s ChannelsService) getChannel(c *gin.Context) (channel entities.Channel, notFound bool, feedChannel *parser.Channel) {
+func (s ChannelsService) getChannel(c *gin.Context) (channel entities.Channel, notFound bool, channelF *parser.Channel) {
 	feedURL := c.Params.ByName("uri")
 	uri := strings.Replace(feedURL, "/", "", 1)
 
@@ -40,7 +40,7 @@ func (s ChannelsService) getChannel(c *gin.Context) (channel entities.Channel, n
 
 		log.Println(err, url)
 
-		channelF, err := parser.URL(url)
+		channelF, err = parser.URL(url)
 
 		log.Println("getChannel err: ", err)
 		if err != nil {
@@ -58,10 +58,11 @@ func (s ChannelsService) getChannel(c *gin.Context) (channel entities.Channel, n
 			// go channels.Create(s.DB, url.String())
 		}
 
-		channel = channels.TranslateFromFeedToEntity(channel, feedChannel)
+		channel = channels.TranslateFromFeedToEntity(channel, channelF)
 	}
 
-	return channel, err != nil, feedChannel
+	log.Println("ChannelF", channelF)
+	return channel, err != nil, channelF
 }
 
 func (s ChannelsService) Get(c *gin.Context) {

@@ -12,9 +12,7 @@ func URL(url *url.URL) (channels *Channel, _error error) {
 	c := make(chan *Channel)
 	err := make(chan error)
 
-	fetcher := NewFetcher([]string{url.String()}, c, err)
-
-	go fetcher.run()
+	go RunFetcher(url.String(), c, err)
 
 	log.Debug("channels: %s", channels)
 	log.Debug("_error: %s", _error)
