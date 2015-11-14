@@ -13,12 +13,11 @@ import (
 type Fetcher struct {
 	channel chan<- *Channel
 	err     chan<- error
-	finish  chan<- bool
 	urls    []string
 }
 
-func NewFetcher(urls []string, c chan<- *Channel, f chan<- bool, err chan<- error) *Fetcher {
-	return &Fetcher{c, err, f, urls}
+func NewFetcher(urls []string, c chan<- *Channel, err chan<- error) *Fetcher {
+	return &Fetcher{c, err, urls}
 }
 
 func (f *Fetcher) run() {
@@ -33,7 +32,12 @@ func (f *Fetcher) run() {
 	}
 	wg.Wait()
 
-	f.finish <- true
+	f.end(nil, errors.New("not found channel"))
+}
+
+func (f *Fetcher) end(channel *Channel, err error) {
+	f.channel <- channel
+	f.err <- err
 }
 
 func (f *Fetcher) process(url string) {
@@ -41,7 +45,7 @@ func (f *Fetcher) process(url string) {
 
 	if err != nil {
 		log.Debug("a new error %s", err.Error())
-		f.err <- err
+		f.end(nil, err)
 		return
 	}
 
@@ -56,7 +60,7 @@ func (f *Fetcher) process(url string) {
 			}
 		} else {
 			err = errors.New("URL is a HTML page, and a LINK to XML Feed URL was not found")
-			f.err <- err
+			f.end(nil, err)
 			return
 		}
 	}
@@ -91,8 +95,7 @@ func (f *Fetcher) send(channel *Channel, url string) {
 
 	f.buildRecords(channel)
 
-	f.channel <- channel
-	close(f.channel)
+	f.end(channel, nil)
 }
 
 func (f *Fetcher) appendEpisodes(c *Channel, e []*rss.Item) {

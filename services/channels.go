@@ -1,6 +1,9 @@
 package services
 
 import (
+	"log"
+	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -21,56 +24,69 @@ func NewChannelsService(db gorm.DB) ChannelsService {
 	return ChannelsService{DB: db}
 }
 
-func (s ChannelsService) Get(c *gin.Context) {
-	var channel entities.Channel
-	var episodes []*entities.Episode
+func (s ChannelsService) getChannel(c *gin.Context) (channel entities.Channel, notFound bool, feedChannel *parser.Channel) {
+	feedURL := c.Params.ByName("uri")
+	uri := strings.Replace(feedURL, "/", "", 1)
 
-	uri := c.Params.ByName("uri")
-	channelURI := strings.Replace(uri, "/", "", 1)
-
-	err := s.DB.Table(models.Channel{}.TableName()).Where("uri = ?", channelURI).First(&channel).Error
+	err := s.DB.Table(models.Channel{}.TableName()).Where("uri = ?", uri).First(&channel).Error
 
 	if err == gorm.RecordNotFound {
-		url, err := helpers.ParseURL(uri)
+		var url *url.URL
+		url, err = helpers.ParseURL(feedURL)
 
 		if err != nil {
-			c.AbortWithStatus(404)
-			return
+			return channel, true, nil
 		}
 
-		feed, err := parser.URL(url)
+		log.Println(err, url)
 
+		channelF, err := parser.URL(url)
+
+		log.Println("getChannel err: ", err)
 		if err != nil {
-			c.AbortWithStatus(404)
-			return
+			return channel, true, nil
 		}
 
-		channel = channels.TranslateFromFeedToEntity(channel, feed[0])
+		if uhuraID := FindUhuraID(s.DB, channelF); uhuraID != "" {
+			err = s.DB.Table(models.Channel{}.TableName()).Where("uri = ?", uhuraID).First(&channel).Error
+			if err == nil {
+				return channel, false, nil
+			}
+		}
 
-		episodes, ids := channels.TranslateEpisodesFromFeedToEntity(feed[0])
+		channel = channels.TranslateFromFeedToEntity(channel, feedChannel)
+	}
+
+	return channel, err != nil, feedChannel
+}
+
+func (s ChannelsService) Get(c *gin.Context) {
+	var episodes []*entities.Episode
+	channel, notFound, feedChannel := s.getChannel(c)
+
+	if notFound {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
+	if feedChannel != nil {
+		var ids []int64
+		episodes, ids = channels.TranslateEpisodesFromFeedToEntity(feedChannel)
 		channel.Episodes = ids
+	} else {
+		if helpers.CacheHeader(c, channel.UpdatedAt) {
+			c.AbortWithStatus(304)
+			return
+		}
 
-		c.JSON(200, gin.H{"channel": channel, "episodes": episodes})
-		return
-	}
+		userId, _ := helpers.GetUser(c)
+		channel.Episodes, episodes = s.getEpisodes(channel.Id, channel.Uri, userId)
 
-	if err != nil {
-		c.AbortWithStatus(404)
-		return
-	}
-
-	if helpers.CacheHeader(c, channel.UpdatedAt) {
-		c.AbortWithStatus(304)
-		return
-	}
-
-	userId, _ := helpers.GetUser(c)
-	channel.Episodes, episodes = s.getEpisodes(channel.Id, channelURI, userId)
-
-	if userId != 0 {
-		channel.Subscribed = s.DB.Table(models.Subscription{}.TableName()).Where("user_id = ?", userId).
-			Where("channel_id = ?", channel.Id).
-			Find(&models.Subscription{}).Error != gorm.RecordNotFound
+		if userId != 0 {
+			channel.Subscribed = s.DB.Table(models.Subscription{}.TableName()).Where("user_id = ?", userId).
+				Where("channel_id = ?", channel.Id).
+				Find(&models.Subscription{}).Error != gorm.RecordNotFound
+		}
 	}
 
 	c.JSON(200, gin.H{"channel": channel, "episodes": episodes})

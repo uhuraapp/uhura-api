@@ -22,22 +22,20 @@ func (s ParserService) ByURL(c *gin.Context) {
 		c.JSON(500, map[string]string{"error": "URL invalid"})
 	}
 
-	channels, _err := parser.URL(url)
+	channel, _err := parser.URL(url)
 
-	for _, channel := range channels {
-		channel.UhuraID = s.findUhuraID(channel)
-	}
+	channel.UhuraID = FindUhuraID(s.DB, channel)
 
 	c.JSON(200, gin.H{
-		"channels": channels,
-		"errors":   _err.Error(),
+		"channel": channel,
+		"errors":  _err.Error(),
 	})
 }
 
-func (s ParserService) findUhuraID(c *parser.Channel) string {
+func FindUhuraID(db gorm.DB, c *parser.Channel) string {
 	var uris []string
 
-	s.DB.Table(models.Channel{}.TableName()).Where("url in (?)", c.Links).Pluck("uri", &uris)
+	db.Table(models.Channel{}.TableName()).Where("url in (?)", c.Links).Pluck("uri", &uris)
 
 	if len(uris) < 1 {
 		return ""
