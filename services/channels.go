@@ -107,7 +107,11 @@ func (s ChannelsService) Open(c *gin.Context) {
 	c.JSON(200, gin.H{})
 }
 
-func (s ChannelsService) getEpisodes(channelID int64, channelUri string, userId int) (ids []int64, episodes []*entities.Episode) {
+func (s ChannelsService) getEpisodes(channelID int64, channelUri string, userId int) ([]int64, []*entities.Episode) {
+
+	ids := make([]int64, 0)
+	episodes := make([]*entities.Episode, 0)
+
 	s.DB.Table(models.Episode{}.TableName()).
 		Where("channel_id = ?", channelID).
 		Order("published_at DESC").
@@ -120,5 +124,5 @@ func (s ChannelsService) getEpisodes(channelID int64, channelUri string, userId 
 
 	models.SetListenAttributesToEpisode(s.DB, userId, episodes, channelUri)
 
-	return
+	return ids, episodes
 }
