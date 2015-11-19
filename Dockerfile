@@ -10,10 +10,11 @@ RUN godep restore
 
 RUN go get github.com/pilu/fresh
 
-RUN go build
+RUN go get
 
 RUN rm -Rf Godeps
 
 EXPOSE 3000
 
-CMD ["/go/bin/fresh"]
+CMD ["/go/bin/uhura-api"]
+
