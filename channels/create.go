@@ -38,6 +38,7 @@ func Create(database gorm.DB, url string) (*entities.Channel, bool) {
 		if ok {
 			database.Table(models.Channel{}.TableName()).First(&channel, model.Id)
 			go CreateLinks(channelF.Links, channel.Id, database)
+			// TODO: add to sync queue
 		}
 	}
 

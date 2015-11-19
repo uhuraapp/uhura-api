@@ -10,6 +10,7 @@ import (
 	"bitbucket.org/dukex/uhura-api/entities"
 	"bitbucket.org/dukex/uhura-api/helpers"
 	"bitbucket.org/dukex/uhura-api/models"
+	"bitbucket.org/dukex/uhura-worker/sync"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 )
@@ -112,6 +113,8 @@ func (s UserSubscriptionService) Create(c *gin.Context) {
 			c.AbortWithStatus(500)
 			return
 		}
+
+		sync.Sync(_channel.Id, s.DB)
 		params.Subscription.ChannelID = _channel.Uri
 	}
 
