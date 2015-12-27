@@ -33,10 +33,12 @@ func Mount(_r *gin.RouterGroup) {
 	categories := services.NewCategoriesService(DB)
 	parser := services.NewParser(DB)
 	profile := services.NewProfileService(DB)
+	users := services.NewUserService(DB)
 
 	_r.Use(middleware.Authentication(DB))
 
 	needAuth := middleware.Protected()
+	apiAuth := middleware.ApiProtected()
 
 	r := _r.Group("/v2")
 	{
@@ -65,7 +67,6 @@ func Mount(_r *gin.RouterGroup) {
 		r.POST("/users/subscriptions", needAuth, userSubscriptions.Create)
 		r.GET("/users/subscriptions/:uri", needAuth, userSubscriptions.Show)
 		r.DELETE("/users/subscriptions/:uri", needAuth, userSubscriptions.Delete)
-
 		r.GET("/users/recommendations", needAuth, userRecommendations.Index)
 
 		r.GET("/episodes", episodes.GetPaged)
@@ -81,5 +82,11 @@ func Mount(_r *gin.RouterGroup) {
 
 		r.GET("/categories", categories.Index)
 		r.GET("/categories/:uri", categories.Get)
+	}
+
+	v := _r.Group("/v3")
+	{
+		v.GET("/users.json", apiAuth, users.All)
+		v.GET("/users/:id", apiAuth, users.Get)
 	}
 }

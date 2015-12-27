@@ -1,8 +1,12 @@
 package middleware
 
 import (
+	"crypto/md5"
+	"encoding/hex"
+	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"bitbucket.org/dukex/uhura-api/models"
 
@@ -34,6 +38,40 @@ func Protected() gin.HandlerFunc {
 		auth := _auth.(*authenticator.Auth)
 		if userId, ok := auth.CurrentUser(c.Request); ok {
 			c.Set("user_id", userId)
+			c.Next()
+		} else {
+			c.AbortWithStatus(http.StatusUnauthorized)
+		}
+	}
+}
+
+func ApiProtected() gin.HandlerFunc {
+	private := os.Getenv("PRIVATE_TOKEN")
+
+	return func(c *gin.Context) {
+		request := c.Request
+
+		authorization := strings.Split(request.Header.Get("Auth-Token"), " ")[0]
+		timestamp := strings.Split(request.Header.Get("Auth-Timestamp"), " ")[0]
+
+		if authorization == "" || timestamp == "" {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		h := md5.New()
+		h.Write([]byte(private + timestamp))
+		token := hex.EncodeToString(h.Sum(nil))
+
+		log.Println(private + timestamp)
+		log.Println("timestamp", timestamp)
+		log.Println("private", private)
+		log.Println("token", token)
+		log.Println("auth", authorization)
+		log.Println("--------------------")
+
+		if authorization == token {
+			c.Set("api_id", token)
 			c.Next()
 		} else {
 			c.AbortWithStatus(http.StatusUnauthorized)
