@@ -21,7 +21,15 @@ func NewUserService(db gorm.DB) UserService {
 func (s UserService) All(c *gin.Context) {
 	var users []entities.User
 
-	err := s.DB.Table(models.User{}.TableName()).Find(&users).Error
+	email := c.Request.URL.Query().Get("email")
+
+	query := s.DB.Table(models.User{}.TableName())
+
+	if email != "" {
+		query = query.Where("email = ?", email)
+	}
+
+	err := query.Find(&users).Error
 
 	if err != nil {
 		c.AbortWithStatus(500)
