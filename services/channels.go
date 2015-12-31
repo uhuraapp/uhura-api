@@ -65,6 +65,19 @@ func (s ChannelsService) getChannel(c *gin.Context) (channel entities.Channel, n
 	return channel, err != nil, channelF
 }
 
+func (s ChannelsService) Top(c *gin.Context) {
+	var channels []entities.Channel
+	s.DB.Table(models.Subscription{}.TableName()).
+		Select("channels.title, channels.image_url, COUNT(*) AS subscribers_count").
+		Joins("INNER JOIN channels ON user_channels.channel_id = channels.id").
+		Group("channels.title").
+		Order("subscribers_count DESC").
+		Limit(5).
+		Find(&channels)
+
+	c.JSON(200, gin.H{"channels": channels})
+}
+
 func (s ChannelsService) Get(c *gin.Context) {
 	var episodes []*entities.Episode
 	channel, notFound, feedChannel := s.getChannel(c)
