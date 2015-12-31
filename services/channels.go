@@ -70,8 +70,8 @@ func (s ChannelsService) Top(c *gin.Context) {
 	s.DB.Table(models.Subscription{}.TableName()).
 		Select("channels.title, channels.image_url, COUNT(*) AS subscribers_count").
 		Joins("INNER JOIN channels ON user_channels.channel_id = channels.id").
-		Group("channels.title").
 		Order("subscribers_count DESC").
+		Group("channels.title, channels.image_url").
 		Limit(5).
 		Find(&channels)
 
