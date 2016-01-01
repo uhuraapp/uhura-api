@@ -52,7 +52,7 @@ func ExampleBatch() {
 		log.Fatal(err)
 	}
 
-	te.Likes.Batch([]too.BatchRaterOp{
+	err = te.Likes.Batch([]too.BatchRaterOp{
 		{
 			User: "Sonic",
 			Items: []too.Item{
@@ -81,8 +81,18 @@ func ExampleBatch() {
 				"WALL·E",
 				"Princess Mononoke",
 			},
+		}, {
+			User: "Luigi",
+			Items: []too.Item{
+				"The Prestige",
+				"The Dark Knight",
+			},
 		},
-	})
+	}, true)
+
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	items, _ := te.Suggestions.For("Luigi", 2)
 	for _, item := range items {
@@ -122,7 +132,7 @@ func BenchmarkNoBatch(b *testing.B) {
 	}
 }
 
-func BenchmarkUsingBatch(b *testing.B) {
+func BenchmarkUsingBatchWithoutAutoUpdate(b *testing.B) {
 	te, err := too.New("redis://localhost", "movies")
 	if err != nil {
 		log.Fatal(err)
@@ -161,6 +171,49 @@ func BenchmarkUsingBatch(b *testing.B) {
 					"Princess Mononoke",
 				},
 			},
-		})
+		}, false)
+	}
+}
+
+func BenchmarkUsingBatchWithAutoUpdate(b *testing.B) {
+	te, err := too.New("redis://localhost", "movies")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		te.Likes.Batch([]too.BatchRaterOp{
+			{
+				User: "Sonic",
+				Items: []too.Item{
+					"The Shawshank Redemption",
+					"The Godfather",
+					"The Dark Knight",
+					"Pulp Fiction",
+				},
+			},
+			{
+				User: "Mario",
+				Items: []too.Item{
+					"The Godfather",
+					"The Dark Knight",
+					"The Shawshank Redemption",
+					"The Prestige",
+					"The Matrix",
+				},
+			},
+			{
+				User: "Peach",
+				Items: []too.Item{
+					"The Godfather",
+					"Inception",
+					"Fight Club",
+					"WALL·E",
+					"Princess Mononoke",
+				},
+			},
+		}, true)
 	}
 }

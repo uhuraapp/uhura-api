@@ -87,7 +87,7 @@ te.Likes.Batch([]too.BatchRaterOp{
       "Princess Mononoke",
     },
   },
-})
+}, true) // The last command is about auto update the similars and Suggestions table
 ```
 
 ## Documentation
