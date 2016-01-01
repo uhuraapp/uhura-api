@@ -33,7 +33,8 @@ func (r UserRecommendationService) Index(c *gin.Context) {
 	var ids []string
 	channels := make([]entities.Subscription, 0)
 
-	items, _ := r.e.Suggestions.For(too.User(userID), 5)
+	items, err := r.e.Suggestions.For(too.User(userID), 5)
+	log.Println(err, items)
 
 	for _, id := range items {
 		ids = append(ids, string(id))

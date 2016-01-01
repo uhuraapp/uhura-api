@@ -4,7 +4,7 @@
 	"Deps": [
 		{
 			"ImportPath": "bitbucket.org/dukex/uhura-worker/sync",
-			"Rev": "cd18ff963e9a380d205e4b65f123bce8a8aec2b6"
+			"Rev": "9df6a8d7c46c2160081c033357f435991e40cf3f"
 		},
 		{
 			"ImportPath": "code.google.com/p/go-charset/charset",
@@ -43,6 +43,14 @@
 			"Rev": "8deddbd03fec2c28969266e52f27b6fb22be1823"
 		},
 		{
+			"ImportPath": "github.com/garyburd/redigo/internal",
+			"Rev": "6ece6e0a09f28cc399b21550cbf37ab39ba63cce"
+		},
+		{
+			"ImportPath": "github.com/garyburd/redigo/redis",
+			"Rev": "6ece6e0a09f28cc399b21550cbf37ab39ba63cce"
+		},
+		{
 			"ImportPath": "github.com/gin-gonic/gin",
 			"Comment": "v1.0rc1-136-gfd5d429",
 			"Rev": "fd5d4294a5d5223d55fc76d7840f4b0ad91647bb"
@@ -58,6 +66,10 @@
 		{
 			"ImportPath": "github.com/gorilla/sessions",
 			"Rev": "f61c3ec2cf65d69e7efedfd4d060fe128882c951"
+		},
+		{
+			"ImportPath": "github.com/hjr265/too",
+			"Rev": "eb511ac199ad7e69cb0bd72e0e83ff30f9b60223"
 		},
 		{
 			"ImportPath": "github.com/jinzhu/gorm",
