@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -140,13 +141,27 @@ func (s ChannelsService) getEpisodes(channelID int64, channelUri string, userId 
 }
 
 func (s ChannelsService) Index(c *gin.Context) {
-	channels := make([]entities.Channel, 0)
-	q := c.Request.URL.Query().Get("q")
+	LIMIT := 25
 
+	channels := make([]entities.Channel, 0)
+	query := c.Request.URL.Query()
+	q := query.Get("q")
 	if q != "" {
+		page, err := strconv.Atoi(query.Get("page"))
+		if err != nil {
+			page = 0
+		} else {
+			page = page - 1
+		}
+		offset := page * LIMIT
+
 		// q is a term search
 		s.DB.Table(models.Channel{}.TableName()).
-			Where("to_tsvector(title || ' ' || description) @@ to_tsquery(?)", q).Find(&channels)
+			Where("to_tsvector(title || ' ' || description) @@ to_tsquery(?)", q).
+			Limit(LIMIT).
+			Order("updated_at DESC").
+			Offset(offset).
+			Find(&channels)
 
 	}
 
