@@ -138,3 +138,17 @@ func (s ChannelsService) getEpisodes(channelID int64, channelUri string, userId 
 
 	return ids, episodes
 }
+
+func (s ChannelsService) Index(c *gin.Context) {
+	channels := make([]entities.Channel, 0)
+	q := c.Request.URL.Query().Get("q")
+
+	if q != "" {
+		// q is a term search
+		s.DB.Table(models.Channel{}.TableName()).
+			Where("to_tsvector(title || ' ' || description) @@ to_tsquery(?)", q).Find(&channels)
+
+	}
+
+	c.JSON(200, gin.H{"channels": channels})
+}
