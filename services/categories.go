@@ -45,6 +45,7 @@ func (s *CategoriesService) Get(c *gin.Context) {
 		Find(&channels)
 
 	for _, channel := range channels {
+		channel.Episodes = make([]int64, 0)
 		category.ChannelsIDs = append(category.ChannelsIDs, channel.Uri)
 	}
 
