@@ -2,6 +2,7 @@ package services
 
 import (
 	"encoding/json"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -30,7 +31,11 @@ func (s UserSubscriptionService) Index(c *gin.Context) {
 	_userID, _ := c.Get("user_id")
 	userID := _userID.(string)
 
-	if helpers.UseHTTPCache("user-subscriptions-index:"+userID, database.CACHE, c) {
+	origin := c.Request.Header.Get("Origin")
+	referer, _ := url.Parse(origin)
+	host := referer.Host
+
+	if helpers.UseHTTPCache("user-subscriptions-index:"+userID+":"+host, database.CACHE, c) {
 		return
 	}
 
