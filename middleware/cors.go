@@ -12,6 +12,9 @@ func CORS() gin.HandlerFunc {
 		referer, _ := url.Parse(origin)
 
 		allow := referer.Scheme + "://" + referer.Host
+		if referer.Scheme == "" || referer.Host == "" {
+			allow = "https://www.uhura.io"
+		}
 
 		c.Writer.Header().Set("Access-Control-Allow-Origin", allow)
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
