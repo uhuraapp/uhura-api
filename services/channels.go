@@ -179,20 +179,19 @@ func (s ChannelsService) Index(c *gin.Context) {
 		db := s.DB.DB()
 
 		rids, err := db.Query("SELECT id FROM (SELECT id, tsv FROM channels, plainto_tsquery('" + q + "') AS q WHERE (tsv @@ q)) AS t1 ORDER BY ts_rank_cd(t1.tsv, plainto_tsquery('" + q + "')) DESC")
-		log.Println(err)
-
 		for rids.Next() {
 			var id int64
 			err = rids.Scan(&id)
-			log.Println(err)
-			if err != nil {
+			if err == nil {
 				ids = append(ids, id)
 			}
 		}
 
-		s.DB.Table(models.Channel{}.TableName()).
-			Where("id in (?)", ids).
-			Find(&channels)
+		if len(ids) > 0 {
+			s.DB.Table(models.Channel{}.TableName()).
+				Where("id in (?)", ids).
+				Find(&channels)
+		}
 	}
 
 	c.JSON(200, gin.H{"channels": channels})
