@@ -84,6 +84,19 @@ func (s ChannelsService) Top(c *gin.Context) {
 	c.JSON(200, gin.H{"channels": channels})
 }
 
+func (s ChannelsService) Sync(c *gin.Context) {
+	channel, notFound, _ := s.getChannel(c)
+
+	if notFound {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
+	sync.Sync(channel.Id, s.DB)
+
+	c.JSON(200, gin.H{"sync": ""})
+}
+
 func (s ChannelsService) Get(c *gin.Context) {
 	var episodes []*entities.Episode
 	channel, notFound, feedChannel := s.getChannel(c)

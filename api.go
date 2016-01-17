@@ -48,7 +48,7 @@ func Mount(_r *gin.RouterGroup) {
 
 		r.GET("/channels", channels.Index)
 		r.GET("/channels/*uri", channels.Get)
-		// r.GET("/channels/:uri/open", channels.Open)
+		r.GET("/sync/:uri", channels.Sync)
 
 		r.GET("/parser", parser.ByURL)
 
