@@ -175,13 +175,13 @@ func (s ChannelsService) Index(c *gin.Context) {
 		offset := page * LIMIT
 
 		// q is a term search
+
 		s.DB.Table(models.Channel{}.TableName()).
 			Where("to_tsvector(title || ' ' || description) @@ to_tsquery(?)", q).
 			Limit(LIMIT).
 			Order("updated_at DESC").
 			Offset(offset).
 			Find(&channels)
-
 	}
 
 	c.JSON(200, gin.H{"channels": channels})
