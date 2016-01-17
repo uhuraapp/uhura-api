@@ -13,6 +13,7 @@ import (
 	"bitbucket.org/dukex/uhura-api/helpers"
 	"bitbucket.org/dukex/uhura-api/models"
 	"bitbucket.org/dukex/uhura-api/parser"
+	"bitbucket.org/dukex/uhura-worker/sync"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 )
@@ -56,7 +57,12 @@ func (s ChannelsService) getChannel(c *gin.Context) (channel entities.Channel, n
 				return channel, false, nil
 			}
 		} else {
-			go channels.Create(s.DB, url.String())
+			go func() {
+				newChannel, ok := channels.Create(s.DB, url.String())
+				if ok {
+					sync.Sync(newChannel.Id, s.DB)
+				}
+			}()
 		}
 
 		channel = channels.TranslateFromFeedToEntity(channel, channelF)
