@@ -76,6 +76,20 @@ func Migrations(database gorm.DB) {
 	database.Model(&models.Profile{}).AddUniqueIndex("idx_profile_user_id", "user_id")
 	database.Model(&models.Profile{}).AddIndex("idx_profile_by_key", "key")
 
-	database.Exec("CREATE INDEX channel_search_idx ON channels USING gin(to_tsvector('english', title || ' ' || description))")
+	// database.Exec("CREATE INDEX channel_search_idx ON channels USING gin(to_tsvector('english', title || ' ' || description))")
+	// Search
 	database.Exec("CREATE EXTENSION unaccent")
+	database.Exec("ALTER TABLE channels ADD COLUMN tsv tsvector")
+	database.Exec("CREATE INDEX channels_tsv_idx ON channels USING gin(tsv)")
+	database.Exec("UPDATE channels SET tsv = setweight(to_tsvector(language::regconfig, coalesce(title,'')), 'A') || setweight(to_tsvector(language::regconfig, coalesce(description,'')), 'D');")
+	database.Exec(`CREATE FUNCTION channels_search_trigger() RETURNS trigger AS $$
+begin
+  new.tsv :=
+    setweight(to_tsvector(language::regconfig, coalesce(title,'')), 'A') ||
+		setweight(to_tsvector(language::regconfig, coalesce(description,'')), 'D');
+  return new;
+end
+$$ LANGUAGE plpgsql;`)
+	database.Exec("CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE ON channels FOR EACH ROW EXECUTE PROCEDURE channels_search_trigger();")
+
 }
