@@ -44,7 +44,7 @@ func CacheHeader(c *gin.Context, lastModified time.Time) bool {
 		}
 
 		if ifModifiedSinceTime.Sub(updatedAt) < 1 {
-			return true
+			// return true
 		}
 	}
 
