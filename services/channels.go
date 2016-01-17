@@ -176,7 +176,9 @@ func (s ChannelsService) Index(c *gin.Context) {
 
 		ids := make([]int64, 0)
 
-		rids, err := s.DB.Exec("SELECT id FROM (SELECT id, tsv FROM channels, plainto_tsquery('" + q + "') AS q WHERE (tsv @@ q)) AS t1 ORDER BY ts_rank_cd(t1.tsv, plainto_tsquery('" + q + "')) DESC").Rows()
+		db := s.DB.DB()
+
+		rids, err := db.Query("SELECT id FROM (SELECT id, tsv FROM channels, plainto_tsquery('" + q + "') AS q WHERE (tsv @@ q)) AS t1 ORDER BY ts_rank_cd(t1.tsv, plainto_tsquery('" + q + "')) DESC")
 		log.Println(err)
 
 		for rids.Next() {
