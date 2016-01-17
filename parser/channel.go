@@ -71,10 +71,10 @@ func (c *Channel) Build() {
 }
 
 var Languages = map[string]string{
-	"ar": "arabic",
+	"ar": "english", // don't support arabic
 	"br": "portuguese",
-	"ca": "catalan",
-	"cy": "welsh",
+	"ca": "english", // don't support catalan
+	"cy": "english", // don't support welsh
 	"da": "danish",
 	"de": "german",
 	"en": "english",
@@ -83,21 +83,21 @@ var Languages = map[string]string{
 	"fr": "french",
 	"hu": "hungarian",
 	"it": "italian",
-	"ko": "korean",
-	"ja": "japan",
-	"jp": "japan",
-	"my": "burmese",
+	"ko": "english", // don't support korean
+	"ja": "english", // don't support japan
+	"jp": "english", // don't support japan
+	"my": "english", // don't support burmese
 	"nl": "dutch",
 	"no": "norwegian",
-	"pl": "polish",
+	"pl": "english", // don't support polish
 	"pt": "portuguese",
 	"ro": "romanian",
 	"ru": "russian",
-	"sl": "sloven",
-	"sk": "slovak",
+	"sl": "english", // don't support sloven
+	"sk": "englosh", // don't support slovak
 	"sv": "swedish",
 	"tr": "turkish",
-	"zh": "chinese",
+	"zh": "english", // don't support chinese
 }
 
 func NormalizeLanguage(language string) string {
