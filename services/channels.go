@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -160,27 +159,37 @@ func (s ChannelsService) getEpisodes(channelID int64, channelUri string, userId 
 }
 
 func (s ChannelsService) Index(c *gin.Context) {
-	LIMIT := 25
-
+	// LIMIT := 25
 	channels := make([]entities.Channel, 0)
 	query := c.Request.URL.Query()
 	q := query.Get("q")
 	if q != "" {
-		page, err := strconv.Atoi(query.Get("page"))
-		if err != nil {
-			page = 0
-		} else {
-			page = page - 1
-		}
-		offset := page * LIMIT
+		// page, err := strconv.Atoi(query.Get("page"))
+		// if err != nil {
+		// 	page = 0
+		// } else {
+		// 	page = page - 1
+		// }
+		// offset := page * LIMIT
 
 		// q is a term search
 
+		ids := make([]int64, 0)
+
+		rids, err := s.DB.Exec("SELECT id FROM (SELECT id, tsv FROM channels, plainto_tsquery('" + q + "') AS q WHERE (tsv @@ q)) AS t1 ORDER BY ts_rank_cd(t1.tsv, plainto_tsquery('" + q + "')) DESC").Rows()
+		log.Println(err)
+
+		for rids.Next() {
+			var id int64
+			err = rids.Scan(&id)
+			log.Println(err)
+			if err != nil {
+				ids = append(ids, id)
+			}
+		}
+
 		s.DB.Table(models.Channel{}.TableName()).
-			Where("to_tsvector(title || ' ' || description) @@ to_tsquery(?)", q).
-			Limit(LIMIT).
-			Order("updated_at DESC").
-			Offset(offset).
+			Where("id in (?)", ids).
 			Find(&channels)
 	}
 
