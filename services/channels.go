@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -159,20 +160,18 @@ func (s ChannelsService) getEpisodes(channelID int64, channelUri string, userId 
 }
 
 func (s ChannelsService) Index(c *gin.Context) {
-	// LIMIT := 25
+	LIMIT := 25
 	channels := make([]entities.Channel, 0)
 	query := c.Request.URL.Query()
 	q := query.Get("q")
 	if q != "" {
-		// page, err := strconv.Atoi(query.Get("page"))
-		// if err != nil {
-		// 	page = 0
-		// } else {
-		// 	page = page - 1
-		// }
-		// offset := page * LIMIT
-
-		// q is a term search
+		page, err := strconv.Atoi(query.Get("page"))
+		if err != nil {
+			page = 0
+		} else {
+			page = page - 1
+		}
+		offset := page * LIMIT
 
 		ids := make([]int64, 0)
 
@@ -192,11 +191,16 @@ func (s ChannelsService) Index(c *gin.Context) {
 
 		if len(ids) > 0 {
 			s.DB.Table(models.Channel{}.TableName()).
-				Select("id, title, image_url").
 				Where("id in (?)", ids).
+				Limit(LIMIT).
+				Offset(offset).
 				Find(&channels)
 		}
 	}
 
-	c.JSON(200, gin.H{"channels": channels})
+	for i, _ := range channels {
+		channels[i].Episodes = make([]int64, 0)
+	}
+
+	c.JSON(200, gin.H{"channels": channels, "episodes": []int64{}})
 }
