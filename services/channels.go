@@ -56,7 +56,7 @@ func (s ChannelsService) getChannel(c *gin.Context) (channel entities.Channel, n
 				return channel, false, nil
 			}
 		} else {
-			// go channels.Create(s.DB, url.String())
+			go channels.Create(s.DB, url.String())
 		}
 
 		channel = channels.TranslateFromFeedToEntity(channel, channelF)
