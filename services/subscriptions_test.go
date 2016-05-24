@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"time"
 
-	"bitbucket.org/dukex/uhura-api/database"
-	"bitbucket.org/dukex/uhura-api/models"
-	"bitbucket.org/dukex/uhura-api/services"
+	"github.com/uhuraapp/uhura-api/database"
+	"github.com/uhuraapp/uhura-api/models"
+	"github.com/uhuraapp/uhura-api/services"
 	"github.com/bitly/go-simplejson"
 	"github.com/jinzhu/gorm"
 	. "gopkg.in/check.v1"

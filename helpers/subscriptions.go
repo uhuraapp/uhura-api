@@ -1,7 +1,7 @@
 package helpers
 
 import (
-	"bitbucket.org/dukex/uhura-api/entities"
+	"github.com/uhuraapp/uhura-api/entities"
 	"github.com/jinzhu/gorm"
 )
 

@@ -3,8 +3,8 @@ package models
 import (
 	"time"
 
-	"bitbucket.org/dukex/uhura-api/entities"
-	"bitbucket.org/dukex/uhura-api/helpers"
+	"github.com/uhuraapp/uhura-api/entities"
+	"github.com/uhuraapp/uhura-api/helpers"
 	"github.com/jinzhu/gorm"
 )
 

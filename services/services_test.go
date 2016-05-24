@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	d "bitbucket.org/dukex/uhura-api/database"
-	"bitbucket.org/dukex/uhura-api/models"
+	d "github.com/uhuraapp/uhura-api/database"
+	"github.com/uhuraapp/uhura-api/models"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"

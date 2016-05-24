@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"bitbucket.org/dukex/uhura-api/models"
+	"github.com/uhuraapp/uhura-api/models"
 
 	authenticator "github.com/dukex/go-auth"
 	"github.com/gin-gonic/gin"

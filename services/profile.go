@@ -3,10 +3,10 @@ package services
 import (
 	"strconv"
 
-	"bitbucket.org/dukex/uhura-api/database"
-	"bitbucket.org/dukex/uhura-api/entities"
-	"bitbucket.org/dukex/uhura-api/helpers"
-	"bitbucket.org/dukex/uhura-api/models"
+	"github.com/uhuraapp/uhura-api/database"
+	"github.com/uhuraapp/uhura-api/entities"
+	"github.com/uhuraapp/uhura-api/helpers"
+	"github.com/uhuraapp/uhura-api/models"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 )

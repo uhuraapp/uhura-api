@@ -3,10 +3,10 @@ package channels
 import (
 	"time"
 
-	"bitbucket.org/dukex/uhura-api/entities"
-	"bitbucket.org/dukex/uhura-api/helpers"
-	"bitbucket.org/dukex/uhura-api/models"
-	"bitbucket.org/dukex/uhura-api/parser"
+	"github.com/uhuraapp/uhura-api/entities"
+	"github.com/uhuraapp/uhura-api/helpers"
+	"github.com/uhuraapp/uhura-api/models"
+	"github.com/uhuraapp/uhura-api/parser"
 	"github.com/jinzhu/gorm"
 )
 

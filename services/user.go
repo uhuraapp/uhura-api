@@ -4,8 +4,8 @@ import (
 	"log"
 	"strings"
 
-	"bitbucket.org/dukex/uhura-api/entities"
-	"bitbucket.org/dukex/uhura-api/models"
+	"github.com/uhuraapp/uhura-api/entities"
+	"github.com/uhuraapp/uhura-api/models"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 )

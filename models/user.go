@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"bitbucket.org/dukex/uhura-api/entities"
+	"github.com/uhuraapp/uhura-api/entities"
 
 	"github.com/dchest/uniuri"
 	authenticator "github.com/dukex/go-auth"

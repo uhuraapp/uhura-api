@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"strings"
 
-	"bitbucket.org/dukex/uhura-api/helpers"
+	"github.com/uhuraapp/uhura-api/helpers"
 	rss "github.com/jteeuwen/go-pkg-rss"
 )
 
