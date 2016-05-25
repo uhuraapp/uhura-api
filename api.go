@@ -19,7 +19,7 @@ func main() {
 	Mount(r.Group("/"))
 
 	log.Println("Listening", os.Getenv("PORT"), "...")
-	http.ListenAndServe(":"+os.Getenv("PORT"), middleware.Gzip(r))
+	log.Println(http.ListenAndServe(":"+os.Getenv("PORT"), middleware.Gzip(r)))
 }
 
 func Mount(_r *gin.RouterGroup) {
