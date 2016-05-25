@@ -4,8 +4,7 @@ import (
 	"errors"
 	"regexp"
 
-	charset "code.google.com/p/go-charset/charset"
-	_ "code.google.com/p/go-charset/data"
+	"golang.org/x/net/html/charset"
 	rss "github.com/jteeuwen/go-pkg-rss"
 )
 
@@ -44,7 +43,7 @@ func (f *Fetcher) process(url string) {
 	}
 
 	rss.New(0, true, f._c, f.episodeHandler(url)).
-		FetchBytes(url, body, charset.NewReader)
+		FetchBytes(url, body, charset.NewReaderLabel)
 }
 
 func (f *Fetcher) episodeHandler(url string) func(*rss.Feed, *rss.Channel, []*rss.Item) {

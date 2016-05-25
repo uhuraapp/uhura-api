@@ -2,8 +2,6 @@ package parser
 
 import (
 	"net/url"
-
-	_ "code.google.com/p/go-charset/data"
 )
 
 func URL(url *url.URL) (channels *Channel, _error error) {
