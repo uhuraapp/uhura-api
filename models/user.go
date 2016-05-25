@@ -31,6 +31,7 @@ type User struct {
 	AgreeWithTheTermsAndPolicyIn string
 	OptInAt                      time.Time
 	DeletedAt                    time.Time
+	ExportKey string `sql:"DEFAULT:uuid_generate_v4()"`
 }
 
 func (self User) TableName() string {

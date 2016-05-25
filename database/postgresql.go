@@ -40,6 +40,8 @@ func NewPostgresql() (database *gorm.DB) {
 }
 
 func Migrations(database *gorm.DB) {
+	database.DB().Exec("create extension \"uuid-ossp\";")
+
 	database.AutoMigrate(&models.Episode{})
 	database.AutoMigrate(&models.Listened{})
 	database.AutoMigrate(&models.Channel{})
