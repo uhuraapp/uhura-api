@@ -81,7 +81,6 @@ func (s UserSubscriptionService) Delete(c *gin.Context) {
 
 		channel.Episodes = make([]int64, 0)
 
-		go helpers.NewEvent(userID, "unsubscribed", map[string]interface{}{"channel_id": channel.Id})
 		c.JSON(200, gin.H{"subscription": channel})
 	}
 
@@ -153,8 +152,6 @@ func (s UserSubscriptionService) createByChannelID(userID int, channelID string)
 		}
 
 		channel.Subscribed = true
-
-		go helpers.NewEvent(strconv.Itoa(userID), "subscribed", map[string]interface{}{"channel_id": channel.Id})
 
 		return &channel, true
 	}

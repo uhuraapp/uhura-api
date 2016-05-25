@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/uhuraapp/uhura-api/entities"
-	"github.com/uhuraapp/uhura-api/helpers"
 	"github.com/uhuraapp/uhura-api/models"
 	authenticator "github.com/dukex/go-auth"
 	"github.com/gin-gonic/gin"
@@ -47,7 +46,6 @@ func (s AuthService) ByProviderCallback(c *gin.Context) {
 		session := auth.Login(c.Request, userId)
 		session.Save(c.Request, c.Writer)
 		go s.setAgree(userId)
-		// 	go helpers.NewEvent(userIdint, "login", map[string]interface{}{})
 	}
 
 	closeHTML := []byte("<html><head></head><body>Loading....<script>window.close()</script></body></html>")
@@ -211,9 +209,7 @@ func (s AuthService) SignUp(c *gin.Context) {
 
 func (s AuthService) Logout(c *gin.Context) {
 	auth, _ := s.getAuth(c)
-	userId, _ := auth.CurrentUser(c.Request)
 
-	go helpers.NewEvent(userId, "logout", map[string]interface{}{})
 	session := auth.Logout(c.Request)
 	session.Save(c.Request, c.Writer)
 

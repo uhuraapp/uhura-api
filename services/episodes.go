@@ -85,8 +85,6 @@ func (s EpisodeService) Played(c *gin.Context) {
 		ChannelId: episode.ChannelId,
 	}).FirstOrCreate(&models.Listened{})
 
-	go helpers.NewEvent(_userId.(string), "listened", map[string]interface{}{"episode_id": episode.Id, "channel_id": episode.ChannelId})
-
 	c.JSON(201, gin.H{})
 }
 
@@ -138,7 +136,6 @@ func (s EpisodeService) Unlistened(c *gin.Context) {
 		ChannelId: episode.ChannelId,
 	}).Delete(&models.Listened{})
 
-	go helpers.NewEvent(_userId.(string), "unlistened", map[string]interface{}{"episode_id": episode.Id, "channel_id": episode.ChannelId})
 	c.AbortWithStatus(204)
 }
 
