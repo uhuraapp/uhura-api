@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	d "github.com/uhuraapp/uhura-api/database"
-	"github.com/uhuraapp/uhura-api/models"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
+	d "github.com/uhuraapp/uhura-api/database"
+	"github.com/uhuraapp/uhura-api/models"
 	. "gopkg.in/check.v1"
 )
 

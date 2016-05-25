@@ -3,11 +3,11 @@ package channels
 import (
 	"time"
 
+	"github.com/jinzhu/gorm"
 	"github.com/uhuraapp/uhura-api/entities"
 	"github.com/uhuraapp/uhura-api/helpers"
 	"github.com/uhuraapp/uhura-api/models"
 	"github.com/uhuraapp/uhura-api/parser"
-	"github.com/jinzhu/gorm"
 )
 
 func Create(database *gorm.DB, url string) (*entities.Channel, bool) {

@@ -5,8 +5,8 @@ import (
 	"encoding/hex"
 	"strings"
 
-	"github.com/uhuraapp/uhura-api/helpers"
 	rss "github.com/jteeuwen/go-pkg-rss"
+	"github.com/uhuraapp/uhura-api/helpers"
 )
 
 // Channel parsed

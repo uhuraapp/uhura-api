@@ -6,7 +6,7 @@ import (
 
 type ChannelURL struct {
 	Id        int64
-	ChannelId int64 `sql:"index"`
+	ChannelId int64  `sql:"index"`
 	Url       string `sql:"type:varchar(200);unique_index"`
 	CreatedAt time.Time
 	UpdatedAt time.Time

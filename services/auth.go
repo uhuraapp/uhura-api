@@ -9,11 +9,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/uhuraapp/uhura-api/entities"
-	"github.com/uhuraapp/uhura-api/models"
 	authenticator "github.com/dukex/go-auth"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
+	"github.com/uhuraapp/uhura-api/entities"
+	"github.com/uhuraapp/uhura-api/models"
 )
 
 type AuthService struct {

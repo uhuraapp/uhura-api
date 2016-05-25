@@ -4,9 +4,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/uhuraapp/uhura-api/models"
 	"github.com/jinzhu/gorm"
 	pq "github.com/lib/pq"
+	"github.com/uhuraapp/uhura-api/models"
 )
 
 func NewPostgresql() (database *gorm.DB) {

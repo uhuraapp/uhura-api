@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 	"github.com/uhuraapp/uhura-api/entities"
 	"github.com/uhuraapp/uhura-api/helpers"
 	"github.com/uhuraapp/uhura-api/models"
-	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
 )
 
 type EpisodeService struct {
@@ -50,7 +50,6 @@ func (s EpisodeService) GetPaged(c *gin.Context) {
 	userId, _ := helpers.GetUser(c)
 	params := c.Request.URL.Query()
 	perPage, _ := strconv.Atoi(params.Get("per_page"))
-
 
 	s.
 		DB.Table(models.Episode{}.TableName()).

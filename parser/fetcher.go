@@ -4,8 +4,8 @@ import (
 	"errors"
 	"regexp"
 
-	"golang.org/x/net/html/charset"
 	rss "github.com/jteeuwen/go-pkg-rss"
+	"golang.org/x/net/html/charset"
 )
 
 type Fetcher struct {

@@ -3,9 +3,9 @@ package models
 import (
 	"time"
 
+	"github.com/jinzhu/gorm"
 	"github.com/uhuraapp/uhura-api/entities"
 	"github.com/uhuraapp/uhura-api/helpers"
-	"github.com/jinzhu/gorm"
 )
 
 type Episode struct {

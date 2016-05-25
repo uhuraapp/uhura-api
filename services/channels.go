@@ -8,14 +8,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 	"github.com/uhuraapp/uhura-api/channels"
 	"github.com/uhuraapp/uhura-api/entities"
 	"github.com/uhuraapp/uhura-api/helpers"
 	"github.com/uhuraapp/uhura-api/models"
 	"github.com/uhuraapp/uhura-api/parser"
 	"github.com/uhuraapp/uhura-worker/sync"
-	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
 )
 
 type ChannelsService struct {

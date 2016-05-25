@@ -4,11 +4,11 @@ import (
 	"log"
 	"os"
 
-	"github.com/uhuraapp/uhura-api/entities"
-	"github.com/uhuraapp/uhura-api/models"
 	"github.com/gin-gonic/gin"
 	"github.com/hjr265/too"
 	"github.com/jinzhu/gorm"
+	"github.com/uhuraapp/uhura-api/entities"
+	"github.com/uhuraapp/uhura-api/models"
 )
 
 type UserRecommendationService struct {

@@ -1,8 +1,8 @@
 package helpers
 
 import (
-	"github.com/uhuraapp/uhura-api/entities"
 	"github.com/jinzhu/gorm"
+	"github.com/uhuraapp/uhura-api/entities"
 )
 
 func UserSubscriptions(userID string, db *gorm.DB, subscriptionsTableName, channelsTableName, profileID string) ([]entities.Subscription, []string) {

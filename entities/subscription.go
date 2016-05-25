@@ -15,4 +15,3 @@ type Subscription struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 	Enabled     bool      `json:"enabled"`
 }
-

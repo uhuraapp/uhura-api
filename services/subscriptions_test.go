@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/bitly/go-simplejson"
+	"github.com/jinzhu/gorm"
 	"github.com/uhuraapp/uhura-api/database"
 	"github.com/uhuraapp/uhura-api/models"
 	"github.com/uhuraapp/uhura-api/services"
-	"github.com/bitly/go-simplejson"
-	"github.com/jinzhu/gorm"
 	. "gopkg.in/check.v1"
 )
 

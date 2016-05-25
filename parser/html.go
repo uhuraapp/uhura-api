@@ -21,5 +21,5 @@ func FindLinks(body []byte) []string {
 		})
 	}
 
-  return links
+	return links
 }

@@ -1,8 +1,8 @@
 package channels
 
 import (
-	"github.com/uhuraapp/uhura-api/models"
 	"github.com/jinzhu/gorm"
+	"github.com/uhuraapp/uhura-api/models"
 )
 
 func Ping(database *gorm.DB, id int64) {
