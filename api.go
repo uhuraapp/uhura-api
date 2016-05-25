@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/gin-gonic/gin"
 	"github.com/uhuraapp/uhura-api/database"
 	"github.com/uhuraapp/uhura-api/middleware"
 	"github.com/uhuraapp/uhura-api/services"
-	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -34,6 +34,7 @@ func Mount(_r *gin.RouterGroup) {
 	parser := services.NewParser(DB)
 	profile := services.NewProfileService(DB)
 	users := services.NewUserService(DB)
+	export := services.NewExportService(DB)
 
 	_r.Use(middleware.Authentication(DB))
 
@@ -85,6 +86,8 @@ func Mount(_r *gin.RouterGroup) {
 
 		r.GET("/categories", categories.Index)
 		r.GET("/categories/:uri", categories.Get)
+
+		r.GET("/export/:id", export.Get)
 	}
 
 	v := _r.Group("/v3")
