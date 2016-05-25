@@ -17,10 +17,10 @@ import (
 )
 
 type AuthService struct {
-	DB gorm.DB
+	DB *gorm.DB
 }
 
-func NewAuthService(db gorm.DB) AuthService {
+func NewAuthService(db *gorm.DB) AuthService {
 	return AuthService{DB: db}
 }
 

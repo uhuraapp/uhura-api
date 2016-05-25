@@ -9,8 +9,7 @@ import (
 	pq "github.com/lib/pq"
 )
 
-func NewPostgresql() gorm.DB {
-	var database gorm.DB
+func NewPostgresql() (database *gorm.DB) {
 	var err error
 
 	databaseUrl, e := pq.ParseURL(os.Getenv("DATABASE_URL"))
@@ -40,7 +39,7 @@ func NewPostgresql() gorm.DB {
 	return database
 }
 
-func Migrations(database gorm.DB) {
+func Migrations(database *gorm.DB) {
 	database.AutoMigrate(&models.Episode{})
 	database.AutoMigrate(&models.Listened{})
 	database.AutoMigrate(&models.Channel{})

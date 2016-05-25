@@ -10,7 +10,7 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-func Create(database gorm.DB, url string) (*entities.Channel, bool) {
+func Create(database *gorm.DB, url string) (*entities.Channel, bool) {
 	channelURL, _ := helpers.ParseURL(url)
 	channelF, err := parser.URL(channelURL)
 
@@ -27,7 +27,7 @@ func Create(database gorm.DB, url string) (*entities.Channel, bool) {
 	log.Debug("channel UhuraID: %s", channelF.UhuraID)
 	if channelF.UhuraID != "" {
 		ok = database.Table(models.Channel{}.TableName()).Where("uri = ?", channelF.UhuraID).
-			First(&channel).Error != gorm.RecordNotFound
+			First(&channel).Error != gorm.ErrRecordNotFound
 	} else {
 		model := translateChannel(channelF)
 		log.Debug("channel: %s", model)
@@ -95,7 +95,7 @@ func translateChannel(channel *parser.Channel) models.Channel {
 	return TranslateFromFeed(model, channel)
 }
 
-func CreateLinks(links []string, channelId int64, database gorm.DB) {
+func CreateLinks(links []string, channelId int64, database *gorm.DB) {
 	for i := 0; i < len(links); i++ {
 		u := models.ChannelURL{}
 		database.Table(models.ChannelURL{}.TableName()).

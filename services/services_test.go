@@ -49,8 +49,8 @@ func botRequest(method string, fn gin.HandlerFunc) *httptest.ResponseRecorder {
 	return PerformRequest(r, method, "/test", "")
 }
 
-func databaseTest() gorm.DB {
-	var database gorm.DB
+func databaseTest() *gorm.DB {
+	var database *gorm.DB
 
 	databaseUrl, _ := pq.ParseURL(os.Getenv("TEST_DATABASE_URL"))
 	database, _ = gorm.Open("postgres", databaseUrl)

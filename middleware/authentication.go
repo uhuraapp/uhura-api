@@ -15,7 +15,7 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-func Authentication(db gorm.DB) gin.HandlerFunc {
+func Authentication(db *gorm.DB) gin.HandlerFunc {
 	auth := authenticator.NewAuth()
 	auth.Helper = models.NewUserHelper(db)
 

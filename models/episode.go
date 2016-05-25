@@ -28,7 +28,7 @@ func (e Episode) TableName() string {
 	return "items"
 }
 
-func (e Episode) CountByChannel(database gorm.DB, channelId int64) int64 {
+func (e Episode) CountByChannel(database *gorm.DB, channelId int64) int64 {
 	var episodesCount int64
 
 	database.Table(e.TableName()).Where("channel_id = ?", channelId).Count(&episodesCount)
@@ -44,7 +44,7 @@ func mapEpisodeIds(episodes []*entities.Episode) []int64 {
 	return ids
 }
 
-func SetListenAttributesToEpisode(DB gorm.DB, userId int, episodes []*entities.Episode, channelURI string) {
+func SetListenAttributesToEpisode(DB *gorm.DB, userId int, episodes []*entities.Episode, channelURI string) {
 	ids := mapEpisodeIds(episodes)
 
 	var listeneds []*Listened

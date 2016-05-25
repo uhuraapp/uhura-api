@@ -12,11 +12,11 @@ import (
 )
 
 type UserRecommendationService struct {
-	DB gorm.DB
+	DB *gorm.DB
 	e  *too.Engine
 }
 
-func NewUserRecommendationService(db gorm.DB) UserRecommendationService {
+func NewUserRecommendationService(db *gorm.DB) UserRecommendationService {
 	e, err := too.New(os.Getenv("REDIS_URL"), "channels")
 
 	if err != nil {

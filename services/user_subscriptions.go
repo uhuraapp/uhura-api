@@ -3,7 +3,6 @@ package services
 import (
 	"encoding/json"
 	"net/url"
-	"strconv"
 	"time"
 
 	"github.com/uhuraapp/uhura-api/channels"
@@ -18,11 +17,11 @@ import (
 
 // UserSubscriptionService TODO
 type UserSubscriptionService struct {
-	DB gorm.DB
+	DB *gorm.DB
 }
 
 // NewUserSubscriptionService TODO
-func NewUserSubscriptionService(db gorm.DB) UserSubscriptionService {
+func NewUserSubscriptionService(db *gorm.DB) UserSubscriptionService {
 	return UserSubscriptionService{DB: db}
 }
 
@@ -73,7 +72,7 @@ func (s UserSubscriptionService) Delete(c *gin.Context) {
 
 	database.CACHE.Delete("s:" + userID)
 
-	if s.DB.Table(models.Channel{}.TableName()).Where("uri = ?", channelURI).First(&channel).Error != gorm.RecordNotFound {
+	if s.DB.Table(models.Channel{}.TableName()).Where("uri = ?", channelURI).First(&channel).Error != gorm.ErrRecordNotFound {
 		s.DB.Table(models.Subscription{}.TableName()).Where("channel_id = ? AND user_id = ?", channel.Id, userID).
 			Delete(models.Subscription{})
 
@@ -139,7 +138,7 @@ func (s UserSubscriptionService) Create(c *gin.Context) {
 func (s UserSubscriptionService) createByChannelID(userID int, channelID string) (*entities.Channel, bool) {
 	var channel entities.Channel
 
-	if s.DB.Table(models.Channel{}.TableName()).Where("uri = ?", channelID).First(&channel).Error != gorm.RecordNotFound {
+	if s.DB.Table(models.Channel{}.TableName()).Where("uri = ?", channelID).First(&channel).Error != gorm.ErrRecordNotFound {
 		subscription := models.Subscription{
 			UserId:    int64(userID),
 			ChannelId: channel.Id,
@@ -147,7 +146,7 @@ func (s UserSubscriptionService) createByChannelID(userID int, channelID string)
 			UpdatedAt: time.Now(),
 		}
 
-		if err := s.DB.Table(models.Subscription{}.TableName()).Where("user_id = ?", userID).Where("channel_id = ?", channel.Id).First(&models.Subscription{}).Error; err == gorm.RecordNotFound {
+		if err := s.DB.Table(models.Subscription{}.TableName()).Where("user_id = ?", userID).Where("channel_id = ?", channel.Id).First(&models.Subscription{}).Error; err == gorm.ErrRecordNotFound {
 			s.DB.Table(models.Subscription{}.TableName()).Save(&subscription)
 		}
 

@@ -19,10 +19,10 @@ import (
 )
 
 type ChannelsService struct {
-	DB gorm.DB
+	DB *gorm.DB
 }
 
-func NewChannelsService(db gorm.DB) ChannelsService {
+func NewChannelsService(db *gorm.DB) ChannelsService {
 	return ChannelsService{DB: db}
 }
 
@@ -32,7 +32,7 @@ func (s ChannelsService) getChannel(c *gin.Context) (channel entities.Channel, n
 
 	err := s.DB.Table(models.Channel{}.TableName()).Where("uri = ?", uri).First(&channel).Error
 
-	if err == gorm.RecordNotFound {
+	if err == gorm.ErrRecordNotFound {
 		var url *url.URL
 		url, err = helpers.ParseURL(feedURL)
 
@@ -122,7 +122,7 @@ func (s ChannelsService) Get(c *gin.Context) {
 		if userId != 0 {
 			channel.Subscribed = s.DB.Table(models.Subscription{}.TableName()).Where("user_id = ?", userId).
 				Where("channel_id = ?", channel.Id).
-				Find(&models.Subscription{}).Error != gorm.RecordNotFound
+				Find(&models.Subscription{}).Error != gorm.ErrRecordNotFound
 		}
 	}
 

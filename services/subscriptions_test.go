@@ -13,7 +13,7 @@ import (
 )
 
 type SubscriptionsSuite struct {
-	DB gorm.DB
+	DB *gorm.DB
 }
 
 var _ = Suite(&SubscriptionsSuite{})

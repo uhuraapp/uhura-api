@@ -48,7 +48,7 @@ func (self Profile) TableName() string {
 	return "profiles"
 }
 
-func ProfileKey(DB gorm.DB, userID string) string {
+func ProfileKey(DB *gorm.DB, userID string) string {
 	var key []string
 	DB.Table(Profile{}.TableName()).Where("user_id = ?", userID).Pluck("key", &key)
 
@@ -60,7 +60,7 @@ func ProfileKey(DB gorm.DB, userID string) string {
 }
 
 type UserHelper struct {
-	DB gorm.DB
+	DB *gorm.DB
 }
 
 func (h *UserHelper) PasswordByEmail(email string) (string, bool) {
@@ -126,7 +126,7 @@ func (h *UserHelper) FindUserFromOAuth(provider string, user *authenticator.User
 		First(&u).
 		Error
 	if err != nil {
-		if err == gorm.RecordNotFound {
+		if err == gorm.ErrRecordNotFound {
 			userData := User{
 				Email:      user.Email,
 				Password:   uniuri.NewLen(6),
@@ -146,6 +146,6 @@ func (h *UserHelper) FindUserFromOAuth(provider string, user *authenticator.User
 	return
 }
 
-func NewUserHelper(db gorm.DB) *UserHelper {
+func NewUserHelper(db *gorm.DB) *UserHelper {
 	return &UserHelper{db}
 }

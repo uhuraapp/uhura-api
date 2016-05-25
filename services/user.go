@@ -11,10 +11,10 @@ import (
 )
 
 type UserService struct {
-	DB gorm.DB
+	DB *gorm.DB
 }
 
-func NewUserService(db gorm.DB) UserService {
+func NewUserService(db *gorm.DB) UserService {
 	return UserService{DB: db}
 }
 

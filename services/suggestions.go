@@ -5,9 +5,9 @@ import (
 )
 
 type SuggestionsService struct {
-	DB gorm.DB
+	DB *gorm.DB
 }
 
-func NewSuggestionsService(db gorm.DB) SuggestionsService {
+func NewSuggestionsService(db *gorm.DB) SuggestionsService {
 	return SuggestionsService{DB: db}
 }

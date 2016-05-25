@@ -12,10 +12,10 @@ import (
 )
 
 type ProfileService struct {
-	DB gorm.DB
+	DB *gorm.DB
 }
 
-func NewProfileService(db gorm.DB) ProfileService {
+func NewProfileService(db *gorm.DB) ProfileService {
 	return ProfileService{DB: db}
 }
 

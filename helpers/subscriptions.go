@@ -5,7 +5,7 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-func UserSubscriptions(userID string, db gorm.DB, subscriptionsTableName, channelsTableName, profileID string) ([]entities.Subscription, []string) {
+func UserSubscriptions(userID string, db *gorm.DB, subscriptionsTableName, channelsTableName, profileID string) ([]entities.Subscription, []string) {
 	var ids []int
 	uids := make([]string, 0)
 	subscriptions := make([]entities.Subscription, 0)

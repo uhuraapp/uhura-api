@@ -9,12 +9,12 @@ import (
 )
 
 type CategoriesService struct {
-	DB         gorm.DB
+	DB         *gorm.DB
 	categories []*entities.Category
 	channels   []*entities.Channel
 }
 
-func NewCategoriesService(db gorm.DB) CategoriesService {
+func NewCategoriesService(db *gorm.DB) CategoriesService {
 	c := CategoriesService{DB: db}
 	return c
 }

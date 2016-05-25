@@ -9,10 +9,10 @@ import (
 )
 
 type ParserService struct {
-	DB gorm.DB
+	DB *gorm.DB
 }
 
-func NewParser(db gorm.DB) ParserService {
+func NewParser(db *gorm.DB) ParserService {
 	return ParserService{db}
 }
 
@@ -32,7 +32,7 @@ func (s ParserService) ByURL(c *gin.Context) {
 	})
 }
 
-func FindUhuraID(db gorm.DB, c *parser.Channel) string {
+func FindUhuraID(db *gorm.DB, c *parser.Channel) string {
 	var uris []string
 
 	db.Table(models.Channel{}.TableName()).Where("url in (?)", c.Links).Pluck("uri", &uris)

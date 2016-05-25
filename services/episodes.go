@@ -14,10 +14,10 @@ import (
 )
 
 type EpisodeService struct {
-	DB gorm.DB
+	DB *gorm.DB
 }
 
-func NewEpisodesService(db gorm.DB) EpisodeService {
+func NewEpisodesService(db *gorm.DB) EpisodeService {
 	return EpisodeService{DB: db}
 }
 
@@ -49,13 +49,15 @@ func (s EpisodeService) GetPaged(c *gin.Context) {
 
 	userId, _ := helpers.GetUser(c)
 	params := c.Request.URL.Query()
+	perPage, _ := strconv.Atoi(params.Get("per_page"))
+
 
 	s.
 		DB.Table(models.Episode{}.TableName()).
 		Where("channel_id = ?", params.Get("channel_id")).
 		Where("published_at < ?", params.Get("since")).
 		Order("published_at DESC").
-		Limit(params.Get("per_page")).
+		Limit(perPage).
 		Find(&episodes)
 
 	s.
