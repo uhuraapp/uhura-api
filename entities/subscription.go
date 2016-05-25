@@ -16,14 +16,3 @@ type Subscription struct {
 	Enabled     bool      `json:"enabled"`
 }
 
-// func (s *Subscription) GetToView(database gorm.DB, userId string) int64 {
-// 	var (
-// 		listenedCount int64
-// 	)
-//
-// 	database.Table(models.Listened{}.TableName()).
-// 		Where("channel_id = ? AND user_id = ?", s.Id, userId).
-// 		Count(&listenedCount)
-//
-// 	return models.Episode{}.CountByChannel(database, s.Id) - listenedCount
-// }
