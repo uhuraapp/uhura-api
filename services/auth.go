@@ -76,8 +76,6 @@ func (s AuthService) GetUser(c *gin.Context) {
 
 	s.DB.Table(models.User{}.TableName()).Where("id = ?", userId).Update("last_visited_at", time.Now().Format(time.RubyDate))
 
-	user.ProfileKey = models.ProfileKey(s.DB, userId)
-
 	c.JSON(200, user)
 }
 
@@ -119,7 +117,6 @@ func (s AuthService) UpdateUser(c *gin.Context) {
 	})
 	s.DB.Table(models.User{}.TableName()).Where("id = ?", userId).First(&user)
 
-	user.ProfileKey = models.ProfileKey(s.DB, userId)
 	user.OptIn = !user.OptInAt.IsZero()
 	c.JSON(200, user)
 }

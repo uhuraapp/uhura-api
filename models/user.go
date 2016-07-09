@@ -38,28 +38,6 @@ func (self User) TableName() string {
 	return "users"
 }
 
-type Profile struct {
-	ID       int64
-	Key      string
-	Username string
-	UserID   int64
-}
-
-func (self Profile) TableName() string {
-	return "profiles"
-}
-
-func ProfileKey(DB *gorm.DB, userID string) string {
-	var key []string
-	DB.Table(Profile{}.TableName()).Where("user_id = ?", userID).Pluck("key", &key)
-
-	if len(key) == 0 {
-		return ""
-	}
-
-	return key[0]
-}
-
 type UserHelper struct {
 	DB *gorm.DB
 }
@@ -91,7 +69,6 @@ func (h *UserHelper) FindUserDataByEmail(email string) (string, string, bool) {
 	userId := strconv.Itoa(int(user.Id))
 
 	user.OptIn = !user.OptInAt.IsZero()
-	// user.ProfileKey = ProfileKey(h.DB, userId)
 
 	userJSON, err := json.Marshal(&user)
 

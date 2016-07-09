@@ -23,7 +23,6 @@ func UserSubscriptions(userID string, db *gorm.DB, subscriptionsTableName, chann
 		//	go subscriptions[i].SetSubscribed(userId)
 		//	subscriptions[i].SetEpisodesIds()
 		//	subscriptions[i].ToView = subscriptions[i].GetToView(s.DB, userId)
-		subscriptions[i].ProfileID = profileID
 		uids = append(uids, subscriptions[i].Uri)
 	}
 

@@ -9,7 +9,6 @@ type Subscription struct {
 	ImageUrl    string    `json:"image_url"`
 	ToView      int64     `json:"to_view"`
 	Subscribed  bool      `json:"subscribed"`
-	ProfileID   string    `json:"profile_id"`
 	Description string    `json:"description"`
 	Copyright   string    `json:"copyright"`
 	UpdatedAt   time.Time `json:"updated_at"`
