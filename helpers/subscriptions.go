@@ -18,7 +18,7 @@ func UserSubscriptions(userID string, db *gorm.DB, subscriptionsTableName, chann
 		db.Table(channelsTableName).Where("id in (?)", ids).Order("title ASC").Find(&subscriptions)
 	}
 
-	for i, _ := range subscriptions {
+	for i := range subscriptions {
 		//	subscriptions[i].Uri = channel.FixUri()
 		//	go subscriptions[i].SetSubscribed(userId)
 		//	subscriptions[i].SetEpisodesIds()

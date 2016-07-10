@@ -18,15 +18,15 @@ func TestChannelHasNewURL(t *testing.T) {
 	assert.False(t, channel.HasNewURL())
 	channel = &Channel{Feed: &rss.Channel{
 		Extensions: map[string]map[string][]rss.Extension{
-			"" + ITUNES_EXT: map[string][]rss.Extension{},
+			"" + ITUNES_EXT: {},
 		},
 	}}
 	assert.False(t, channel.HasNewURL())
 
 	channel = &Channel{Feed: &rss.Channel{
 		Extensions: map[string]map[string][]rss.Extension{
-			"" + ITUNES_EXT: map[string][]rss.Extension{
-				"new-feed-url": []rss.Extension{},
+			"" + ITUNES_EXT: {
+				"new-feed-url": {},
 			},
 		},
 	}}
@@ -34,9 +34,9 @@ func TestChannelHasNewURL(t *testing.T) {
 
 	channel = &Channel{Feed: &rss.Channel{
 		Extensions: map[string]map[string][]rss.Extension{
-			"" + ITUNES_EXT: map[string][]rss.Extension{
-				"new-feed-url": []rss.Extension{
-					rss.Extension{
+			"" + ITUNES_EXT: {
+				"new-feed-url": {
+					{
 						Value: "x",
 					},
 				},
@@ -57,15 +57,15 @@ func TestChannelNewURL(t *testing.T) {
 
 	channel = &Channel{Feed: &rss.Channel{
 		Extensions: map[string]map[string][]rss.Extension{
-			"" + ITUNES_EXT: map[string][]rss.Extension{},
+			"" + ITUNES_EXT: {},
 		},
 	}}
 	assert.Equal(t, "", channel.NewURL())
 
 	channel = &Channel{Feed: &rss.Channel{
 		Extensions: map[string]map[string][]rss.Extension{
-			"" + ITUNES_EXT: map[string][]rss.Extension{
-				"new-feed-url": []rss.Extension{},
+			"" + ITUNES_EXT: {
+				"new-feed-url": {},
 			},
 		},
 	}}
@@ -73,9 +73,9 @@ func TestChannelNewURL(t *testing.T) {
 
 	channel = &Channel{Feed: &rss.Channel{
 		Extensions: map[string]map[string][]rss.Extension{
-			"" + ITUNES_EXT: map[string][]rss.Extension{
-				"new-feed-url": []rss.Extension{
-					rss.Extension{
+			"" + ITUNES_EXT: {
+				"new-feed-url": {
+					{
 						Value: "x",
 					},
 				},

@@ -61,7 +61,7 @@ func (f *Fetcher) episodeHandler(url string) func(*rss.Feed, *rss.Channel, []*rs
 }
 
 func addEpisodes(c Channel, e []*rss.Item) Channel {
-	for k, _ := range e {
+	for k := range e {
 		log.Debug("Adding episode (%s) to channel (%s)", e[k].Title, c.Title)
 		c.Episodes = append(c.Episodes, &Episode{Feed: e[k]})
 	}
