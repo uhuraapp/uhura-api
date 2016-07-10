@@ -1,6 +1,7 @@
 package channels
 
 import (
+	"sort"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -56,21 +57,27 @@ func TranslateFromFeedToEntity(entity entities.Channel, channel *parser.Channel)
 	return entity
 }
 
-func TranslateEpisodesFromFeedToEntity(channel *parser.Channel) ([]*entities.Episode, []int64) {
-	episodes := make([]*entities.Episode, 0)
-	ids := make([]int64, 0)
+func TranslateEpisodesFromFeedToEntity(channel *parser.Channel) (entities.Episodes, []string) {
+	episodes := make(entities.Episodes, 0)
+	ids := make([]string, 0)
 
-	for i, episode := range channel.Episodes {
+	for _, episode := range channel.Episodes {
 		s := int64(0)
-		id := int64(i) + time.Now().Unix()
+		id := helpers.MakeUri(episode.Title)
 		episodes = append(episodes, &entities.Episode{
 			Id:          id,
 			Title:       episode.Title,
 			Description: episode.Description,
+			PublishedAt: episode.PublishedAt,
 			SourceUrl:   episode.Source,
 			StoppedAt:   &s,
 		})
-		ids = append(ids, id)
+	}
+
+	sort.Sort(episodes)
+
+	for i := range episodes {
+		ids = append(ids, episodes[i].Id)
 	}
 
 	return episodes, ids
@@ -100,8 +107,8 @@ func CreateLinks(links []string, channelId int64, database *gorm.DB) {
 		u := models.ChannelURL{}
 		database.Table(models.ChannelURL{}.TableName()).
 			FirstOrCreate(&u, models.ChannelURL{
-			ChannelId: channelId,
-			Url:       links[i],
-		})
+				ChannelId: channelId,
+				Url:       links[i],
+			})
 	}
 }

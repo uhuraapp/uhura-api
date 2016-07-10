@@ -16,3 +16,17 @@ type Episode struct {
 	// Duration    string `json:"duration"`
 	// Type        string `json:"type"`
 }
+
+type Episodes []*Episode
+
+func (e Episodes) Len() int {
+	return len(e)
+}
+
+func (e Episodes) Less(i, j int) bool {
+	return e[i].PublishedAt.After(e[j].PublishedAt)
+}
+
+func (e Episodes) Swap(i, j int) {
+	e[i], e[j] = e[j], e[i]
+}
