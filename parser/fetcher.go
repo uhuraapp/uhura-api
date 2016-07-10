@@ -42,13 +42,13 @@ func (f *Fetcher) process(url string) {
 		return
 	}
 
-	rss.New(0, true, f._c, f.episodeHandler(url)).
+	rss.New(0, true, f._c, f.episodeHandler(url, body)).
 		FetchBytes(url, body, charset.NewReaderLabel)
 }
 
-func (f *Fetcher) episodeHandler(url string) func(*rss.Feed, *rss.Channel, []*rss.Item) {
+func (f *Fetcher) episodeHandler(url string, body []byte) func(*rss.Feed, *rss.Channel, []*rss.Item) {
 	return func(feed *rss.Feed, rssChannel *rss.Channel, episodes []*rss.Item) {
-		channel := Channel{Feed: rssChannel, URL: url}
+		channel := Channel{Feed: rssChannel, URL: url, Body: body}
 		if channel.HasNewURL() && channel.NewURL() != url {
 			log.Debug("has new URL: %s != %s", channel.NewURL(), feed.Url)
 			f.process(channel.NewURL())

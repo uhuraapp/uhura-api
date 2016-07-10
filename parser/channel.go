@@ -26,6 +26,7 @@ type Channel struct {
 	Episodes      []*Episode  `json:"episodes"`
 	UhuraID       string      `json:"uhura_id"`
 	LastBuildDate string      `json:"last_build_date"`
+	Body          []byte
 
 	requestedURL string
 	URL          string

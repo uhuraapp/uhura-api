@@ -93,6 +93,7 @@ func TranslateFromFeed(model models.Channel, channel *parser.Channel) models.Cha
 	model.UpdatedAt = time.Now()
 	model.LastBuildDate = channel.LastBuildDate
 	model.Url = channel.URL
+	model.Body = channel.Body
 	return model
 }
 

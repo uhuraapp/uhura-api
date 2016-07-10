@@ -24,6 +24,7 @@ type Channel struct {
 	Loading       bool
 	Colors        string
 	Enabled       bool
+	Body          []byte
 
 	URLS []ChannelURL
 
