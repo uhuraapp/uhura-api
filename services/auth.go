@@ -5,16 +5,22 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
+	"net/url"
+	"os"
 	"strconv"
 	"time"
 
 	authenticator "github.com/dukex/go-auth"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/sessions"
 	"github.com/jinzhu/gorm"
 	"github.com/uhuraapp/uhura-api/entities"
 	"github.com/uhuraapp/uhura-api/models"
 )
+
+var store = sessions.NewCookieStore([]byte(os.Getenv("SESSION_SECRET")))
 
 type AuthService struct {
 	DB *gorm.DB
@@ -26,6 +32,11 @@ func NewAuthService(db *gorm.DB) AuthService {
 
 func (s AuthService) ByProvider(c *gin.Context) {
 	auth, _ := s.getAuth(c)
+
+	session, _ := store.Get(c.Request, "_uhura.api")
+	session.Values["redirect_to"] = c.Query("redirect_to")
+	session.Save(c.Request, c.Writer)
+
 	authorizer := auth.Authorize(c.Params.ByName("provider"))
 	authorizer(c.Writer, c.Request)
 	return
@@ -40,7 +51,10 @@ func (s AuthService) ByEmailPassword(c *gin.Context) {
 }
 
 func (s AuthService) ByProviderCallback(c *gin.Context) {
+	var redirectTo *url.URL
+
 	auth, _ := s.getAuth(c)
+
 	userId, err := auth.OAuthCallback(c.Params.ByName("provider"), c.Writer, c.Request)
 	if err == nil {
 		session := auth.Login(c.Request, userId)
@@ -48,8 +62,38 @@ func (s AuthService) ByProviderCallback(c *gin.Context) {
 		go s.setAgree(userId)
 	}
 
+	token, _ := s.userToken(userId)
+
+	session, _ := store.Get(c.Request, "_uhura.api")
+	sessionRedirectTo, ok := session.Values["redirect_to"].(string)
+	if ok {
+		redirectTo, _ = url.Parse(sessionRedirectTo + "?token=" + token)
+
+		if redirectTo.Scheme == "" {
+			redirectTo.Scheme = "http"
+		}
+
+		log.Println("Redirecting to ", redirectTo.String())
+		c.Redirect(302, redirectTo.String())
+
+		return
+	}
+
 	closeHTML := []byte("<html><head></head><body>Loading....<script>window.close()</script></body></html>")
 	c.Data(200, "text/html", closeHTML)
+}
+
+func (s AuthService) userToken(userId string) (token string, ok bool) {
+	if s.DB.Table(models.User{}.TableName()).
+		Where("id = ?", userId).
+		First(&entities.User{}).
+		RecordNotFound() {
+		return "", false
+	}
+
+	token = s.createUserToken(userId)
+
+	return token, true
 }
 
 func (s AuthService) GetUser(c *gin.Context) {
@@ -67,12 +111,6 @@ func (s AuthService) GetUser(c *gin.Context) {
 		c.AbortWithStatus(404)
 		return
 	}
-
-	if user.ApiToken == "" {
-		s.createUserToken(user.Email)
-	}
-
-	user.OptIn = !user.OptInAt.IsZero()
 
 	s.DB.Table(models.User{}.TableName()).Where("id = ?", userId).Update("last_visited_at", time.Now().Format(time.RubyDate))
 
@@ -231,22 +269,24 @@ func (s AuthService) getAuth(c *gin.Context) (auth *authenticator.Auth, err erro
 	return
 }
 
-func (s AuthService) createUserToken(email string) {
-	token := authenticator.NewUserToken()
-	hasher := md5.New()
-	hasher.Write([]byte(token + email))
-	apiToken := hex.EncodeToString(hasher.Sum(nil))
-	s.DB.Table(models.User{}.TableName()).Where("email = ?", email).Update("api_token", apiToken)
-}
-
 func (s AuthService) setAgree(id string) {
 	var user models.User
 
 	err := s.DB.Table(models.User{}.TableName()).
 		Where("id = ?", id).
+		Where("agree_with_the_terms_and_policy_at IS NULL").
 		First(&user).Error
 
-	if err == nil && user.AgreeWithTheTermsAndPolicyAt.IsZero() {
+	if err == nil {
 		s.DB.Table(models.User{}.TableName()).Where("id = ?", id).Update("agree_with_the_terms_and_policy_at", time.Now())
 	}
+}
+
+func (s AuthService) createUserToken(id string) string {
+	token := authenticator.NewUserToken()
+	hasher := md5.New()
+	hasher.Write([]byte(token + id))
+	apiToken := hex.EncodeToString(hasher.Sum(nil))
+	s.DB.Table(models.User{}.TableName()).Where("id = ?", id).Update("api_token", apiToken)
+	return apiToken
 }
