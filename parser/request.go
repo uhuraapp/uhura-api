@@ -19,5 +19,6 @@ func RequestURL(url string) ([]byte, error) {
 	}
 	body, err := ioutil.ReadAll(response.Body)
 
+	log.Debug("request finished")
 	return body, err
 }

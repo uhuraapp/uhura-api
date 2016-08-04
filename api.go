@@ -28,7 +28,7 @@ func Mount(_r *gin.RouterGroup) {
 	userSubscriptions := services.NewUserSubscriptionService(DB)
 	userRecommendations := services.NewUserRecommendationService(DB)
 	channels := services.NewChannelsService(DB)
-	episodes := services.NewEpisodesService(DB)
+	// episodes := services.NewEpisodesService(DB)
 	auth := services.NewAuthService(DB)
 	categories := services.NewCategoriesService(DB)
 	parser := services.NewParser(DB)
@@ -48,7 +48,7 @@ func Mount(_r *gin.RouterGroup) {
 
 		r.GET("/channels", channels.Index)
 		r.GET("/channels/*uri", channels.Get)
-		r.GET("/sync/:uri", channels.Sync)
+		// r.GET("/sync/:uri", channels.Sync)
 
 		r.GET("/parser", parser.ByURL)
 
@@ -68,16 +68,16 @@ func Mount(_r *gin.RouterGroup) {
 		r.DELETE("/users/subscriptions/:uri", needAuth, userSubscriptions.Delete)
 		r.GET("/users/recommendations", needAuth, userRecommendations.Index)
 
-		r.GET("/episodes", episodes.GetPaged)
-		r.GET("/episodes/:id", episodes.Get)
+		// r.GET("/episodes", episodes.GetPaged)
+		//r.GET("/episodes/:id", episodes.Get)
 
-		r.POST("/episodes/:id/played", needAuth, episodes.Played)
-		r.DELETE("/episodes/:id/played", needAuth, episodes.Unlistened)
+		//r.POST("/episodes/:id/played", needAuth, episodes.Played)
+		//r.DELETE("/episodes/:id/played", needAuth, episodes.Unlistened)
 
-		r.GET("/episodes/:id/download", needAuth, episodes.Download)
-		r.HEAD("/episodes/:id/download", needAuth, episodes.Download)
+		//r.GET("/episodes/:id/download", needAuth, episodes.Download)
+		//r.HEAD("/episodes/:id/download", needAuth, episodes.Download)
 
-		r.PUT("/episodes/:id/listen", needAuth, episodes.Listen)
+		//r.PUT("/episodes/:id/listen", needAuth, episodes.Listen)
 
 		r.GET("/categories", categories.Index)
 		r.GET("/categories/:uri", categories.Get)
