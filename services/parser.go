@@ -22,7 +22,7 @@ func (s ParserService) ByURL(c *gin.Context) {
 		c.JSON(500, map[string]string{"error": "URL invalid"})
 	}
 
-	channel, _err := parser.URL(url)
+	channel, _, _err := parser.URL(url)
 
 	channel.UhuraID = FindUhuraID(s.DB, channel)
 

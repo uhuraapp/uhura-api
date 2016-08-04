@@ -13,4 +13,6 @@ type Channel struct {
 	Episodes    []string  `json:"episodes" sql:"-"`
 	UpdatedAt   time.Time `json:"updated_at"`
 	Enabled     bool      `json:"enabled"`
+	Url         string    `json:"url"`
+	Body        []byte    `json:"-"`
 }

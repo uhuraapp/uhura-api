@@ -26,7 +26,8 @@ type Channel struct {
 	Episodes      []*Episode  `json:"episodes"`
 	UhuraID       string      `json:"uhura_id"`
 	LastBuildDate string      `json:"last_build_date"`
-	Body          []byte
+	Body          []byte      `json:"-"`
+	URI           string      `json:"uri"`
 
 	requestedURL string
 	URL          string
@@ -59,6 +60,7 @@ func (c *Channel) Build() {
 	c.Links = c.GetLinks()
 	c.ID = c.GenerateID()
 	c.LastBuildDate = c.Feed.LastBuildDate
+	c.URI = helpers.MakeUri(c.Feed.Title)
 
 	categories := c.attrs(c, "category", "text")
 	for _, category := range categories {
