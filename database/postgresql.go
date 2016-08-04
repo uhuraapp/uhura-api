@@ -42,7 +42,6 @@ func NewPostgresql() (database *gorm.DB) {
 func Migrations(database *gorm.DB) {
 	database.DB().Exec("create extension \"uuid-ossp\";")
 
-	database.AutoMigrate(&models.Episode{})
 	database.AutoMigrate(&models.Listened{})
 	database.AutoMigrate(&models.Channel{})
 	database.AutoMigrate(&models.Subscription{})
@@ -53,9 +52,6 @@ func Migrations(database *gorm.DB) {
 
 	database.Model(&models.Channel{}).AddIndex("idx_channel_uri", "uri")
 	database.Model(&models.Channel{}).AddIndex("idx_channel_url", "url")
-
-	database.Model(&models.Episode{}).AddIndex("idx_episode_channel_id", "channel_id")
-	database.Model(&models.Episode{}).AddIndex("idx_episode_channel_id_with_published_at", "channel_id", "published_at")
 
 	database.Model(&models.Listened{}).AddIndex("idx_listened", "item_id", "viewed", "user_id")
 	database.Model(&models.Listened{}).AddIndex("idx_listened_by_channel", "channel_id", "user_id")
