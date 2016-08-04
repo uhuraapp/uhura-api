@@ -10,7 +10,7 @@ type Channel struct {
 	Uri         string    `json:"id"`
 	Subscribed  bool      `json:"subscribed"`
 	Copyright   string    `json:"copyright"`
-	Episodes    []int64   `json:"episodes" sql:"-"`
+	Episodes    []string  `json:"episodes" sql:"-"`
 	UpdatedAt   time.Time `json:"updated_at"`
 	Enabled     bool      `json:"enabled"`
 }

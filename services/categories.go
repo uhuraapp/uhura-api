@@ -45,7 +45,7 @@ func (s *CategoriesService) Get(c *gin.Context) {
 		Find(&channels)
 
 	for _, channel := range channels {
-		channel.Episodes = make([]int64, 0)
+		channel.Episodes = make([]string, 0)
 		category.ChannelsIDs = append(category.ChannelsIDs, channel.Uri)
 	}
 
@@ -84,7 +84,7 @@ func (s *CategoriesService) cacheCategoriesAndChannels() {
 				category, fcategory := findCategory(categories, cc.CategoryId)
 				channel, fchannel := findChannel(channels, cc.ChannelId)
 				if fcategory && fchannel {
-					channel.Episodes = make([]int64, 0)
+					channel.Episodes = make([]string, 0)
 					category.ChannelsIDs = append(category.ChannelsIDs, channel.Uri)
 
 					s.channels = uniqChannel(append(s.channels, channel))

@@ -198,8 +198,8 @@ func (s ChannelsService) Index(c *gin.Context) {
 		}
 	}
 
-	for i, _ := range channels {
-		channels[i].Episodes = make([]int64, 0)
+	for i := range channels {
+		channels[i].Episodes = make([]string, 0)
 	}
 
 	c.JSON(200, gin.H{"channels": channels, "episodes": []int64{}})
