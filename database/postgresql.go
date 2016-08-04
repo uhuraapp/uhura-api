@@ -6,6 +6,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 	pq "github.com/lib/pq"
+	"github.com/uhuraapp/uhura-api/helpers"
 	"github.com/uhuraapp/uhura-api/models"
 )
 
@@ -86,4 +87,19 @@ $$ LANGUAGE plpgsql;`)
 	}
 	database.Exec("CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE ON channels FOR EACH ROW EXECUTE PROCEDURE channels_search_trigger();")
 
+	var plays []struct {
+		Id    int
+		Title string
+	}
+
+	database.Table(models.Listened{}.TableName()).
+		Select("user_items.id AS id, items.title AS title").
+		Joins("JOIN items ON items.id = user_items.item_id").
+		Find(&plays)
+
+	for _, play := range plays {
+		database.Table(models.Listened{}.TableName()).
+			Where("id = ?", play.Id).
+			UpdateColumn("item_uid", helpers.MakeUri(play.Title))
+	}
 }

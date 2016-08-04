@@ -79,7 +79,7 @@ func (s ChannelsService) getPlayed(userId int, episodes entities.Episodes) entit
 
 	mapPlayed := make(map[string]*models.Listened, 0)
 	for _, play := range played {
-		mapPlayed[play.Id] = play
+		mapPlayed[play.ItemUID] = play
 	}
 
 	for _, episode := range episodes {
