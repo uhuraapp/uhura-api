@@ -29,7 +29,7 @@ func ChannelModelFromFeed(channel *parser.Channel) models.Channel {
 	model.Description = channel.Description
 	model.Copyright = channel.Copyright
 	model.ImageUrl = channel.Image
-	model.Uri = helpers.MakeUri(channel.Title)
+	model.Uri = channel.URI
 	model.Language = channel.Language
 	model.UpdatedAt = time.Now()
 	model.LastBuildDate = channel.LastBuildDate
@@ -52,6 +52,7 @@ func EpisodesEntityFromFeed(channel *parser.Channel) (entities.Episodes, []strin
 			PublishedAt: episode.PublishedAt,
 			SourceUrl:   episode.Source,
 			StoppedAt:   &s,
+			ChannelUri:  channel.URI,
 		})
 	}
 

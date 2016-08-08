@@ -50,11 +50,21 @@ func Find(database *gorm.DB, uidORurl string) (channel entities.Channel,
 		return channel, episodes, feed, false
 	}
 
-	channel = ChannelEntityFromFeed(feed)
+	channelFeed := ChannelEntityFromFeed(feed)
 	episodes, ids := EpisodesEntityFromFeed(feed)
-	channel.Episodes = ids
+	channelFeed.Episodes = ids
 
-	return channel, episodes, feed, true
+	channel.Uri = channelFeed.Uri
+	database.Table(models.Channel{}.TableName()).
+		Where("id = ?", channel.Id).
+		UpdateColumns(models.Channel{
+			Title: channelFeed.Title,
+			Uri:   channelFeed.Uri,
+		})
+
+	channelFeed.Id = channel.Id
+
+	return channelFeed, episodes, feed, true
 }
 
 func prepareURI(uri string) string {
