@@ -45,12 +45,11 @@ func (s ChannelsService) Get(c *gin.Context) {
 	userId, _ := helpers.GetUser(c)
 	episodes = s.getPlayed(userId, episodes)
 
-	// 	if userId != 0 {
-	// 		channel.Subscribed = s.DB.Table(models.Subscription{}.TableName()).Where("user_id = ?", userId).
-	// 			Where("channel_id = ?", channel.Id).
-	// 			Find(&models.Subscription{}).Error != gorm.ErrRecordNotFound
-	// 	}
-	// }
+	if userId != 0 {
+		channel.Subscribed = s.DB.Table(models.Subscription{}.TableName()).Where("user_id = ?", userId).
+			Where("channel_id = ?", channel.Id).
+			Find(&models.Subscription{}).Error != gorm.ErrRecordNotFound
+	}
 
 	c.JSON(200, gin.H{"channel": channel, "episodes": episodes})
 }
