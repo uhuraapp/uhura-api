@@ -1,9 +1,7 @@
 package services
 
 import (
-	"log"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -93,50 +91,4 @@ func (s ChannelsService) getPlayed(userId int, episodes entities.Episodes) entit
 	}
 
 	return episodes
-}
-
-func (s ChannelsService) Index(c *gin.Context) {
-	LIMIT := 25
-	channels := make([]entities.Channel, 0)
-	query := c.Request.URL.Query()
-	q := query.Get("q")
-	if q != "" {
-		page, err := strconv.Atoi(query.Get("page"))
-		if err != nil {
-			page = 0
-		} else {
-			page = page - 1
-		}
-		offset := page * LIMIT
-
-		ids := make([]int64, 0)
-
-		db := s.DB.DB()
-
-		rids, err := db.Query("SELECT id FROM (SELECT id, tsv FROM channels, plainto_tsquery('" + q + "') AS q WHERE (tsv @@ q)) AS t1 ORDER BY ts_rank_cd(t1.tsv, plainto_tsquery('" + q + "')) DESC")
-		log.Println("Error query", err)
-		if err == nil {
-			for rids.Next() {
-				var id int64
-				err = rids.Scan(&id)
-				if err == nil {
-					ids = append(ids, id)
-				}
-			}
-		}
-
-		if len(ids) > 0 {
-			s.DB.Table(models.Channel{}.TableName()).
-				Where("id in (?)", ids).
-				Limit(LIMIT).
-				Offset(offset).
-				Find(&channels)
-		}
-	}
-
-	for i := range channels {
-		channels[i].Episodes = make([]string, 0)
-	}
-
-	c.JSON(200, gin.H{"channels": channels, "episodes": []int64{}})
 }
