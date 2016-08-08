@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
+	"github.com/uhuraapp/uhura-api/channels"
 	"github.com/uhuraapp/uhura-api/models"
 	// "github.com/uhuraapp/uhura-api/entities"
 	// "github.com/uhuraapp/uhura-api/helpers"
@@ -44,30 +45,26 @@ func (s EpisodeService) Get(c *gin.Context) {
 	// c.JSON(200, map[string]interface{}{"episode": episode})
 }
 
-func (s EpisodeService) GetPaged(c *gin.Context) {
-	// var episodes entities.Episodes
-	// var channelURI []string
+func (s EpisodeService) Index(c *gin.Context) {
+	params := c.Request.URL.Query()
+	channelURI := params.Get("channel_id")
+
+	if channelURI == "" {
+		c.AbortWithStatus(404)
+		return
+	}
 
 	// userId, _ := helpers.GetUser(c)
-	// params := c.Request.URL.Query()
-	// perPage, _ := strconv.Atoi(params.Get("per_page"))
 
-	// s.
-	// 	DB.Table(models.Episode{}.TableName()).
-	// 	Where("channel_id = ?", params.Get("channel_id")).
-	// 	Where("published_at < ?", params.Get("since")).
-	// 	Order("published_at DESC").
-	// 	Limit(perPage).
-	// 	Find(&episodes)
+	_, episodes, _, ok := channels.Find(s.DB, channelURI)
 
-	// s.
-	// 	DB.Table(models.Channel{}.TableName()).
-	// 	Where("id = ?", params.Get("channel_id")).
-	// 	Pluck("uri", &channelURI)
+	if !ok {
+		c.AbortWithStatus(500)
+	}
 
-	// models.SetListenAttributesToEpisode(s.DB, userId, episodes, channelURI[0])
+	// models.SetListenAttributesToEpisode(s.DB, userId, episodes, channelURI)
 
-	// c.JSON(200, map[string]interface{}{"episodes": episodes})
+	c.JSON(200, map[string]interface{}{"episodes": episodes})
 }
 
 func (s EpisodeService) Played(c *gin.Context) {

@@ -47,7 +47,6 @@ func Mount(_r *gin.RouterGroup) {
 		r.GET("/top/channels", channels.Top)
 
 		r.GET("/channels/*uri", channels.Get)
-		// r.GET("/sync/:uri", channels.Sync)
 
 		r.GET("/parser", parser.ByURL)
 
@@ -67,7 +66,7 @@ func Mount(_r *gin.RouterGroup) {
 		r.DELETE("/users/subscriptions/:uri", needAuth, userSubscriptions.Delete)
 		r.GET("/users/recommendations", needAuth, userRecommendations.Index)
 
-		// r.GET("/episodes", episodes.GetPaged)
+		r.GET("/episodes", episodes.Index)
 		//r.GET("/episodes/:id", episodes.Get)
 
 		r.POST("/channels/:channel_id/episodes/:id/played", needAuth, episodes.Played)
