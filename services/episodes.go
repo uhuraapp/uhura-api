@@ -3,14 +3,15 @@ package services
 import (
 	//"io/ioutil"
 	//"net/http"
-	// "strconv"
-	//"time"
+
+	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
+	"github.com/uhuraapp/uhura-api/models"
 	// "github.com/uhuraapp/uhura-api/entities"
 	// "github.com/uhuraapp/uhura-api/helpers"
-	//"github.com/uhuraapp/uhura-api/models"
 )
 
 type EpisodeService struct {
@@ -70,23 +71,37 @@ func (s EpisodeService) GetPaged(c *gin.Context) {
 }
 
 func (s EpisodeService) Played(c *gin.Context) {
-	// var episode models.Episode
-	// episodeId, _ := strconv.Atoi(c.Params.ByName("id"))
-	// _userId, _ := c.Get("user_id")
-	// userId, _ := strconv.Atoi(_userId.(string))
+	episodeUID := c.Params.ByName("id")
+	channelID, _ := strconv.Atoi(c.Params.ByName("channel_id"))
+	_userId, _ := c.Get("user_id")
+	userId, _ := strconv.Atoi(_userId.(string))
 
-	// s.DB.Table(models.Episode{}.TableName()).Where("id = ?", episodeId).First(&episode)
-	// s.DB.Table(models.Listened{}.TableName()).Assign(&models.Listened{
-	// 	Viewed:    true,
-	// 	CreatedAt: time.Now(),
-	// 	StoppedAt: 0,
-	// }).Where(&models.Listened{
-	// 	UserId:    int64(userId),
-	// 	ItemId:    int64(episodeId),
-	// 	ChannelId: episode.ChannelId,
-	// }).FirstOrCreate(&models.Listened{})
+	s.DB.Table(models.Listened{}.TableName()).Assign(&models.Listened{
+		Viewed:    true,
+		CreatedAt: time.Now(),
+		StoppedAt: 0,
+	}).Where(&models.Listened{
+		UserId:    int64(userId),
+		ChannelId: int64(channelID),
+		ItemUID:   episodeUID,
+	}).FirstOrCreate(&models.Listened{})
 
 	c.JSON(201, gin.H{})
+}
+
+func (s EpisodeService) UnPlayed(c *gin.Context) {
+	episodeUID := c.Params.ByName("id")
+	channelID, _ := strconv.Atoi(c.Params.ByName("channel_id"))
+	_userId, _ := c.Get("user_id")
+	userId, _ := strconv.Atoi(_userId.(string))
+
+	s.DB.Table(models.Listened{}.TableName()).Where(&models.Listened{
+		UserId:    int64(userId),
+		ChannelId: int64(channelID),
+		ItemUID:   episodeUID,
+	}).Delete(&models.Listened{})
+
+	c.AbortWithStatus(204)
 }
 
 func (s EpisodeService) Listen(c *gin.Context) {
@@ -115,29 +130,13 @@ func (s EpisodeService) Listen(c *gin.Context) {
 	// 	UpdatedAt: time.Now(),
 	// 	StoppedAt: int64(at),
 	// }).Where(&models.Listened{
-	// 	UserId:    int64(userId),
-	// 	ItemId:    int64(episodeId),
-	// 	ChannelId: episode.ChannelId,
+	// UserId:    int64(userId),
+	// ChannelId: int64(channelID),
+	// ItemUID:   episodeUID,
 	// }).FirstOrCreate(&models.Listened{})
 
 	// c.JSON(201, gin.H{})
 	return
-}
-
-func (s EpisodeService) Unlistened(c *gin.Context) {
-	// var episode models.Episode
-	// episodeId, _ := strconv.Atoi(c.Params.ByName("id"))
-	// _userId, _ := c.Get("user_id")
-	// userId, _ := strconv.Atoi(_userId.(string))
-
-	// s.DB.Table(models.Episode{}.TableName()).Where("id = ?", episodeId).First(&episode)
-	// s.DB.Table(models.Listened{}.TableName()).Where(&models.Listened{
-	// 	UserId:    int64(userId),
-	// 	ItemId:    int64(episodeId),
-	// 	ChannelId: episode.ChannelId,
-	// }).Delete(&models.Listened{})
-
-	// c.AbortWithStatus(204)
 }
 
 func (s EpisodeService) Download(c *gin.Context) {
