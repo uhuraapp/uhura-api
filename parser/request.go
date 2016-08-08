@@ -8,7 +8,7 @@ import (
 
 func RequestURL(url string) ([]byte, error) {
 	response, err := http.Get(url)
-	log.Debug("requested url: %s - %s", url, err)
+	// log.Debug("requested url: %s - %s", url, err)
 	if err != nil {
 		return nil, err
 	}
@@ -19,6 +19,6 @@ func RequestURL(url string) ([]byte, error) {
 	}
 	body, err := ioutil.ReadAll(response.Body)
 
-	log.Debug("request finished")
+	// log.Debug("request finished")
 	return body, err
 }

@@ -15,7 +15,7 @@ func (f *Fetcher) process(url string) {
 	body, err := RequestURL(url)
 
 	if err != nil {
-		log.Debug("a new error %s", err.Error())
+		// log.Debug("a new error %s", err.Error())
 		f.end(nil, err)
 		return
 	}

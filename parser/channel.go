@@ -69,8 +69,8 @@ func (c *Channel) Build() {
 		})
 	}
 
-	log.Debug("%s", c.Feed.Links)
-	log.Debug("channel build finished: %s", c.Title)
+	// log.Debug("%s", c.Feed.Links)
+	// log.Debug("channel build finished: %s", c.Title)
 }
 
 var Languages = map[string]string{

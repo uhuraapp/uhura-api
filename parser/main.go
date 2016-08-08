@@ -7,7 +7,7 @@ import (
 )
 
 func URL(url *url.URL) (channels *Channel, body []byte, _error error) {
-	log.Debug("creating fetcher")
+	// log.Debug("creating fetcher")
 
 	c := make(chan *Channel)
 	err := make(chan error)
@@ -19,7 +19,7 @@ func URL(url *url.URL) (channels *Channel, body []byte, _error error) {
 }
 
 func Body(body []byte, url string) (channels *Channel, _error error) {
-	log.Debug("runing parser")
+	// log.Debug("runing parser")
 
 	c := make(chan *Channel)
 	err := make(chan error)
