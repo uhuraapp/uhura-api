@@ -26,7 +26,6 @@ func Mount(_r *gin.RouterGroup) {
 	DB := database.NewPostgresql()
 
 	userSubscriptions := services.NewUserSubscriptionService(DB)
-	userRecommendations := services.NewUserRecommendationService(DB)
 	channels := services.NewChannelsService(DB)
 	episodes := services.NewEpisodesService(DB)
 	auth := services.NewAuthService(DB)
@@ -64,7 +63,6 @@ func Mount(_r *gin.RouterGroup) {
 		r.POST("/users/subscriptions", needAuth, userSubscriptions.Create)
 		r.GET("/users/subscriptions/:uri", needAuth, userSubscriptions.Show)
 		r.DELETE("/users/subscriptions/:uri", needAuth, userSubscriptions.Delete)
-		r.GET("/users/recommendations", needAuth, userRecommendations.Index)
 
 		r.GET("/episodes", episodes.Index)
 		//r.GET("/episodes/:id", episodes.Get)
