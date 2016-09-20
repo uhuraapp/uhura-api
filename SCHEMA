@@ -1,0 +1,27 @@
+
+
+
+HTTP ---
+  ^     \
+   \     v                _____________________________
+    \   Router           /                             \
+     \     \            /   Auth + Gzip +  Cache        \
+      \    Middlewares +    CORs + Response + Connection/
+       \     \          \______________________________/
+         \     \                   ____________________
+          \    Service ---> Model +                    \
+           |      |         |     |   ~Find(connection) \
+           |      |        /      |   ~All(connection)  /
+           |      * <------        \  ~Scopes          /
+           |      |                 \_________________/
+           |      \
+           |      |\                __________________________
+           |      | ------> Entity +                          \
+           |      |           |    |  ~Build(model) -> Entity /
+           |      |          /     |_________________________/
+           |      * <--------
+            \    /
+           Response +-------------------
+                    |   +data:   gin.H  \
+                    |   +status: int    /
+                     \_________________/

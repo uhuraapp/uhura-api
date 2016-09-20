@@ -1,6 +1,8 @@
 package entities
 
-import "time"
+import (
+	"time"
+)
 
 type Episode struct {
 	Id          string    `json:"id"`
@@ -37,4 +39,32 @@ func (e Episodes) IDs() []string {
 		ids = append(ids, e.Id)
 	}
 	return ids
+}
+
+func (episodes Episodes) Find(uri string) (found *Episode) {
+	for _, episode := range episodes {
+		if episode.Id == uri {
+			found = episode
+		}
+	}
+
+	return found
+}
+
+func (episodes Episodes) SetPlays(plays []*models.Listened) {
+	mapPlayed := make(map[string]*models.Listened, 0)
+	for _, play := range plays {
+		mapPlayed[play.ItemUID] = play
+	}
+
+	for _, episode := range episodes {
+		if mapPlayed[episode.Id] != nil {
+			episode.Listened = mapPlayed[episode.Id].Viewed
+			episode.StoppedAt = &mapPlayed[episode.Id].StoppedAt
+			if episode.Listened {
+				z := int64(0)
+				episode.StoppedAt = &z
+			}
+		}
+	}
 }

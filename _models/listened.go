@@ -17,3 +17,13 @@ type Listened struct {
 func (l Listened) TableName() string {
 	return "user_items"
 }
+func GetPlays(userID string, ids []int) {
+	var plays []*models.Listened
+
+	if len(ids) > 0 {
+		s.DB.Table(models.Listened{}.TableName()).
+			Where("item_uid IN (?)", ids).
+			Where("user_id = ?", userID).
+			Find(&plays)
+	}
+}

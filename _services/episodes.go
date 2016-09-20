@@ -10,9 +10,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"github.com/uhuraapp/uhura-api/channels"
+	"github.com/uhuraapp/uhura-api/entities"
+	"github.com/uhuraapp/uhura-api/helpers"
 	"github.com/uhuraapp/uhura-api/models"
-	// "github.com/uhuraapp/uhura-api/entities"
-	// "github.com/uhuraapp/uhura-api/helpers"
 )
 
 type EpisodeService struct {
@@ -23,62 +23,72 @@ func NewEpisodesService(db *gorm.DB) EpisodeService {
 	return EpisodeService{DB: db}
 }
 
-func (s EpisodeService) Get(c *gin.Context) {
-	// var episode entities.Episode
-	// var channelURI []string
-	// episodeId, _ := strconv.Atoi(c.Params.ByName("id"))
-	// userId, _ := helpers.GetUser(c)
-
-	// err := s.DB.Table(models.Episode{}.TableName()).Where("id = ?", episodeId).First(&episode).Error
-	// if err != nil {
-	// 	c.AbortWithStatus(404)
-	// 	return
-	// }
-
-	// s.
-	// 	DB.Table(models.Channel{}.TableName()).
-	// 	Where("id = ?", episode.ChannelId).
-	// 	Pluck("uri", &channelURI)
-
-	// models.SetListenAttributesToEpisode(s.DB, userId, entities.Episodes{&episode}, channelURI[0])
-
-	// c.JSON(200, map[string]interface{}{"episode": episode})
-}
-
-func (s EpisodeService) Index(c *gin.Context) {
-	params := c.Request.URL.Query()
-	channelURI := params.Get("channel_id")
-
+func (s EpisodeService) episodes(channelURI string) (entities.Episodes, int, bool) {
 	if channelURI == "" {
-		c.AbortWithStatus(404)
-		return
+		return entities.Episodes{}, 404, false
 	}
-
-	// userId, _ := helpers.GetUser(c)
 
 	_, episodes, _, ok := channels.Find(s.DB, channelURI)
 
 	if !ok {
-		c.AbortWithStatus(500)
+		return entities.Episodes{}, 500, false
 	}
 
-	// models.SetListenAttributesToEpisode(s.DB, userId, episodes, channelURI)
+	return episodes, 200, true
+}
 
-	c.JSON(200, map[string]interface{}{"episodes": episodes})
+func (s EpisodeService) episode(channelURI, id string) (*entities.Episode, int, bool) {
+	episodes, status, ok := s.episodes(channelURI)
+
+	if !ok {
+		return &entities.Episode{}, status, ok
+	}
+
+	episode := episodes.Find(id)
+
+	// userId, _ := helpers.GetUser(c)
+	// models.SetListenAttributesToEpisode(s.DB, userId, entities.Episodes{&episode}, channelURI[0])
+
+	return episode, 200, true
+}
+
+func (s EpisodeService) Get(c *gin.Context) {
+	params := c.Request.URL.Query()
+
+	episode, status, ok := s.episode(params.Get("channel_id"), c.Params.ByName("id"))
+
+	if !ok {
+		c.AbortWithStatus(status)
+		return
+	}
+
+	c.JSON(200, gin.H{"episode": episode})
+}
+
+func (s EpisodeService) Index(c *gin.Context) {
+	params := c.Request.URL.Query()
+
+	episodes, status, ok := s.episodes(params.Get("channel_id"))
+
+	if !ok {
+		c.AbortWithStatus(status)
+		return
+	}
+
+	c.JSON(200, gin.H{"episodes": episodes})
 }
 
 func (s EpisodeService) Played(c *gin.Context) {
-	episodeUID := c.Params.ByName("id")
 	channelID, _ := strconv.Atoi(c.Params.ByName("channel_id"))
-	_userId, _ := c.Get("user_id")
-	userId, _ := strconv.Atoi(_userId.(string))
+	episodeUID := c.Params.ByName("id")
+	userID, _ := helpers.GetUser(c)
 
 	s.DB.Table(models.Listened{}.TableName()).Assign(&models.Listened{
 		Viewed:    true,
 		CreatedAt: time.Now(),
 		StoppedAt: 0,
 	}).Where(&models.Listened{
-		UserId:    int64(userId),
+		UserId:    int64(userID),
 		ChannelId: int64(channelID),
 		ItemUID:   episodeUID,
 	}).FirstOrCreate(&models.Listened{})
@@ -87,13 +97,12 @@ func (s EpisodeService) Played(c *gin.Context) {
 }
 
 func (s EpisodeService) UnPlayed(c *gin.Context) {
-	episodeUID := c.Params.ByName("id")
 	channelID, _ := strconv.Atoi(c.Params.ByName("channel_id"))
-	_userId, _ := c.Get("user_id")
-	userId, _ := strconv.Atoi(_userId.(string))
+	episodeUID := c.Params.ByName("id")
+	userID, _ := helpers.GetUser(c)
 
 	s.DB.Table(models.Listened{}.TableName()).Where(&models.Listened{
-		UserId:    int64(userId),
+		UserId:    int64(userID),
 		ChannelId: int64(channelID),
 		ItemUID:   episodeUID,
 	}).Delete(&models.Listened{})
@@ -102,37 +111,31 @@ func (s EpisodeService) UnPlayed(c *gin.Context) {
 }
 
 func (s EpisodeService) Listen(c *gin.Context) {
-	// var episode models.Episode
-	// episodeId, _ := strconv.Atoi(c.Params.ByName("id"))
-	// userId, _ := helpers.GetUser(c)
+	channelID, _ := strconv.Atoi(c.Params.ByName("channel_id"))
+	episodeUID := c.Params.ByName("id")
+	userID, _ := helpers.GetUser(c)
 
-	// var params struct {
-	// 	At int `json:"at"`
-	// }
+	var params struct {
+		At int `json:"at"`
+	}
 
-	// if c.BindJSON(&params) != nil {
-	// 	c.AbortWithStatus(500)
-	// 	return
-	// }
+	if c.BindJSON(&params) != nil {
+		c.AbortWithStatus(500)
+		return
+	}
 
-	// at := params.At
+	at := params.At
 
-	// err := s.DB.Table(models.Episode{}.TableName()).Where("id = ?", episodeId).First(&episode).Error
-	// if err != nil {
-	// 	c.AbortWithStatus(404)
-	// 	return
-	// }
+	s.DB.Table(models.Listened{}.TableName()).Assign(&models.Listened{
+		UpdatedAt: time.Now(),
+		StoppedAt: int64(at),
+	}).Where(&models.Listened{
+		UserId:    int64(userID),
+		ChannelId: int64(channelID),
+		ItemUID:   episodeUID,
+	}).FirstOrCreate(&models.Listened{})
 
-	// s.DB.Table(models.Listened{}.TableName()).Assign(&models.Listened{
-	// 	UpdatedAt: time.Now(),
-	// 	StoppedAt: int64(at),
-	// }).Where(&models.Listened{
-	// UserId:    int64(userId),
-	// ChannelId: int64(channelID),
-	// ItemUID:   episodeUID,
-	// }).FirstOrCreate(&models.Listened{})
-
-	// c.JSON(201, gin.H{})
+	c.JSON(201, gin.H{})
 	return
 }
 
