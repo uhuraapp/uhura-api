@@ -26,16 +26,6 @@
 			"Rev": "8deddbd03fec2c28969266e52f27b6fb22be1823"
 		},
 		{
-			"ImportPath": "github.com/garyburd/redigo/internal",
-			"Comment": "v1.0.0-1-gb8dc900",
-			"Rev": "b8dc90050f24c1a73a52f107f3f575be67b21b7c"
-		},
-		{
-			"ImportPath": "github.com/garyburd/redigo/redis",
-			"Comment": "v1.0.0-1-gb8dc900",
-			"Rev": "b8dc90050f24c1a73a52f107f3f575be67b21b7c"
-		},
-		{
 			"ImportPath": "github.com/gin-gonic/gin",
 			"Comment": "v1.0rc1-268-gf931d1e",
 			"Rev": "f931d1ea80ae95a6fc739213cdd9399bd2967fb6"
@@ -67,10 +57,6 @@
 		{
 			"ImportPath": "github.com/gorilla/sessions",
 			"Rev": "56ba4b0a11da87516629a57408a5f7e4c8ea7b0b"
-		},
-		{
-			"ImportPath": "github.com/hjr265/too",
-			"Rev": "0be58289a7cd0808f80465f3c3840a7340ec7981"
 		},
 		{
 			"ImportPath": "github.com/jinzhu/gorm",
@@ -108,18 +94,9 @@
 			"Rev": "c20d336474599558b10c49498f68725331ac6f42"
 		},
 		{
-			"ImportPath": "github.com/op/go-logging",
-			"Comment": "v1-7-g970db52",
-			"Rev": "970db520ece77730c7e4724c61121037378659d9"
-		},
-		{
 			"ImportPath": "github.com/stvp/rollbar",
 			"Comment": "v0.4.0-6-g3eb4713",
 			"Rev": "3eb4713e2655cd1be805795be31b3f85b74b05fd"
-		},
-		{
-			"ImportPath": "github.com/uhuraapp/uhura-worker/sync",
-			"Rev": "233a5995243677bf5cb1602e7abd08ed926a8358"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/bcrypt",
