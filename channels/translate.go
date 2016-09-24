@@ -4,7 +4,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/jinzhu/gorm"
 	"github.com/uhuraapp/uhura-api/entities"
 	"github.com/uhuraapp/uhura-api/helpers"
 	"github.com/uhuraapp/uhura-api/models"
@@ -63,21 +62,4 @@ func EpisodesEntityFromFeed(channel *parser.Channel) (entities.Episodes, []strin
 	}
 
 	return episodes, ids
-}
-
-// func translateChannel(channel *parser.Channel) models.Channel {
-// 	model := models.Channel{}
-// 	model.CreatedAt = time.Now()
-// 	return TranslateChannelFromFeedToModel(model, channel)
-// }
-
-func CreateLinks(links []string, channelId int64, database *gorm.DB) {
-	for i := 0; i < len(links); i++ {
-		u := models.ChannelURL{}
-		database.Table(models.ChannelURL{}.TableName()).
-			FirstOrCreate(&u, models.ChannelURL{
-				ChannelId: channelId,
-				Url:       links[i],
-			})
-	}
 }
