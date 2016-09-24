@@ -80,19 +80,19 @@ func Migrations(database *gorm.DB) {
 
 	database.Exec("DROP TRIGGER tsvectorupdate")
 
-	// var plays []struct {
-	// 	Id    int
-	// 	Title string
-	// }
+	var plays []struct {
+		Id    int
+		Title string
+	}
 
-	// database.Table(models.Listened{}.TableName()).
-	// 	Select("user_items.id AS id, items.title AS title").
-	// 	Joins("JOIN items ON items.id = user_items.item_id").
-	// 	Find(&plays)
+	database.Table(models.Listened{}.TableName()).
+		Select("user_items.id AS id, items.title AS title").
+		Joins("JOIN items ON items.id = user_items.item_id").
+		Find(&plays)
 
-	// for _, play := range plays {
-	// 	database.Table(models.Listened{}.TableName()).
-	// 		Where("id = ?", play.Id).
-	// 		UpdateColumn("item_uid", helpers.MakeUri(play.Title))
-	// }
+	for _, play := range plays {
+		database.Table(models.Listened{}.TableName()).
+			Where("id = ?", play.Id).
+			UpdateColumn("item_uid", helpers.MakeUri(play.Title))
+	}
 }
