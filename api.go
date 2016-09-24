@@ -26,7 +26,6 @@ func Mount(_r *gin.RouterGroup) {
 	DB := database.NewPostgresql()
 
 	userSubscriptions := services.NewUserSubscriptionService(DB)
-	userRecommendations := services.NewUserRecommendationService(DB)
 	channels := services.NewChannelsService(DB)
 	episodes := services.NewEpisodesService(DB)
 	auth := services.NewAuthService(DB)
@@ -46,10 +45,6 @@ func Mount(_r *gin.RouterGroup) {
 
 		r.GET("/top/channels", channels.Top)
 
-		r.GET("/channels", channels.Index)
-		r.GET("/channels/*uri", channels.Get)
-		r.GET("/sync/:uri", channels.Sync)
-
 		r.GET("/parser", parser.ByURL)
 
 		r.GET("/auth/:provider", auth.ByProvider)
@@ -66,18 +61,13 @@ func Mount(_r *gin.RouterGroup) {
 		r.POST("/users/subscriptions", needAuth, userSubscriptions.Create)
 		r.GET("/users/subscriptions/:uri", needAuth, userSubscriptions.Show)
 		r.DELETE("/users/subscriptions/:uri", needAuth, userSubscriptions.Delete)
-		r.GET("/users/recommendations", needAuth, userRecommendations.Index)
 
-		r.GET("/episodes", episodes.GetPaged)
-		r.GET("/episodes/:id", episodes.Get)
+		r.POST("/channels/:channel_id/episodes/:id/played", needAuth, episodes.Played)
+		r.DELETE("/channels/:channel_id/episodes/:id/played", needAuth, episodes.UnPlayed)
 
-		r.POST("/episodes/:id/played", needAuth, episodes.Played)
-		r.DELETE("/episodes/:id/played", needAuth, episodes.Unlistened)
+		r.GET("/channels/:channel_id/episodes/:id/download", needAuth, episodes.Download)
 
-		r.GET("/episodes/:id/download", needAuth, episodes.Download)
-		r.HEAD("/episodes/:id/download", needAuth, episodes.Download)
-
-		r.PUT("/episodes/:id/listen", needAuth, episodes.Listen)
+		r.GET("/channels/:channel_id", channels.Get)
 
 		r.GET("/categories", categories.Index)
 		r.GET("/categories/:uri", categories.Get)

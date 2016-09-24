@@ -19,7 +19,7 @@ func UserSubscriptions(userID string, db *gorm.DB, subscriptionsTableName, chann
 	}
 
 	for i := range subscriptions {
-		//	subscriptions[i].Uri = channel.FixUri()
+		subscriptions[i].Uri = MakeUri(subscriptions[i].Title)
 		//	go subscriptions[i].SetSubscribed(userId)
 		//	subscriptions[i].SetEpisodesIds()
 		//	subscriptions[i].ToView = subscriptions[i].GetToView(s.DB, userId)

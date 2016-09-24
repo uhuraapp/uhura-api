@@ -730,7 +730,15 @@ func (scope *Scope) orderSQL() string {
 
 	var orders []string
 	for _, order := range scope.Search.orders {
-		orders = append(orders, scope.quoteIfPossible(order))
+		if str, ok := order.(string); ok {
+			orders = append(orders, scope.quoteIfPossible(str))
+		} else if expr, ok := order.(*expr); ok {
+			exp := expr.expr
+			for _, arg := range expr.args {
+				exp = strings.Replace(exp, "?", scope.AddToVars(arg), 1)
+			}
+			orders = append(orders, exp)
+		}
 	}
 	return " ORDER BY " + strings.Join(orders, ",")
 }
@@ -1157,17 +1165,25 @@ func (scope *Scope) autoIndex() *Scope {
 
 	for _, field := range scope.GetStructFields() {
 		if name, ok := field.TagSettings["INDEX"]; ok {
-			if name == "INDEX" {
-				name = fmt.Sprintf("idx_%v_%v", scope.TableName(), field.DBName)
+			names := strings.Split(name, ",")
+
+			for _, name := range names {
+				if name == "INDEX" || name == "" {
+					name = fmt.Sprintf("idx_%v_%v", scope.TableName(), field.DBName)
+				}
+				indexes[name] = append(indexes[name], field.DBName)
 			}
-			indexes[name] = append(indexes[name], field.DBName)
 		}
 
 		if name, ok := field.TagSettings["UNIQUE_INDEX"]; ok {
-			if name == "UNIQUE_INDEX" {
-				name = fmt.Sprintf("uix_%v_%v", scope.TableName(), field.DBName)
+			names := strings.Split(name, ",")
+
+			for _, name := range names {
+				if name == "UNIQUE_INDEX" || name == "" {
+					name = fmt.Sprintf("uix_%v_%v", scope.TableName(), field.DBName)
+				}
+				uniqueIndexes[name] = append(uniqueIndexes[name], field.DBName)
 			}
-			uniqueIndexes[name] = append(uniqueIndexes[name], field.DBName)
 		}
 	}
 

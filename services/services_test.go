@@ -11,7 +11,6 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
 	d "github.com/uhuraapp/uhura-api/database"
-	"github.com/uhuraapp/uhura-api/models"
 	. "gopkg.in/check.v1"
 )
 
@@ -56,15 +55,14 @@ func databaseTest() *gorm.DB {
 	database, _ = gorm.Open("postgres", databaseUrl)
 	database.LogMode(os.Getenv("DEBUG") == "true")
 
+	database.Exec("drop schema public cascade;")
+	database.Exec("create schema public;")
+
 	d.Migrations(database)
 
 	return database
 }
 
 func resetDatabase() {
-	db := databaseTest()
-	db.Delete(models.Episode{})
-	db.Delete(models.Listened{})
-	db.Delete(models.Subscription{})
-	db.Delete(models.Channel{})
+	databaseTest()
 }

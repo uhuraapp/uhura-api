@@ -7,12 +7,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
-	"github.com/uhuraapp/uhura-api/channels"
 	"github.com/uhuraapp/uhura-api/database"
 	"github.com/uhuraapp/uhura-api/entities"
 	"github.com/uhuraapp/uhura-api/helpers"
 	"github.com/uhuraapp/uhura-api/models"
-	"github.com/uhuraapp/uhura-worker/sync"
+	//"github.com/uhuraapp/uhura-worker/sync"
 )
 
 // UserSubscriptionService TODO
@@ -57,7 +56,7 @@ func (s UserSubscriptionService) Show(c *gin.Context) {
 		channel.Subscribed = true
 	}
 
-	channel.Episodes = make([]int64, 0)
+	channel.Episodes = make([]string, 0)
 
 	c.JSON(200, gin.H{"subscription": channel})
 }
@@ -78,7 +77,7 @@ func (s UserSubscriptionService) Delete(c *gin.Context) {
 
 		channel.Subscribed = false
 
-		channel.Episodes = make([]int64, 0)
+		channel.Episodes = make([]string, 0)
 
 		c.JSON(200, gin.H{"subscription": channel})
 	}
@@ -109,25 +108,23 @@ func (s UserSubscriptionService) Create(c *gin.Context) {
 
 	database.CACHE.Delete("s:" + userID)
 
-	if params.Subscription.ChannelURL != "" {
-		_channel, ok := channels.Create(s.DB, params.Subscription.ChannelURL)
+	// if params.Subscription.ChannelURL != "" {
+	// 	_channel, ok := channels.Create(s.DB, params.Subscription.ChannelURL)
 
-		if !ok {
-			c.AbortWithStatus(500)
-			return
-		}
+	// 	if !ok {
+	// 		c.AbortWithStatus(500)
+	// 		return
+	// 	}
 
-		sync.Sync(_channel.Id, s.DB)
-		params.Subscription.ChannelID = _channel.Uri
-	}
+	// 	sync.Sync(_channel.Id, s.DB)
+	// 	params.Subscription.ChannelID = _channel.Uri
+	// }
 
 	userIDInt, _ := helpers.GetUser(c)
 	channel, ok = s.createByChannelID(userIDInt, params.Subscription.ChannelID)
 
 	if ok {
-		go channels.Ping(s.DB, channel.Id)
-
-		channel.Episodes = make([]int64, 0)
+		channel.Episodes = make([]string, 0)
 
 		c.JSON(200, gin.H{"subscription": channel})
 	} else {

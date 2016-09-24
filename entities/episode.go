@@ -3,7 +3,7 @@ package entities
 import "time"
 
 type Episode struct {
-	Id          int64     `json:"id"`
+	Id          string    `json:"id"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
 	Listened    bool      `json:"listened"`
@@ -29,4 +29,12 @@ func (e Episodes) Less(i, j int) bool {
 
 func (e Episodes) Swap(i, j int) {
 	e[i], e[j] = e[j], e[i]
+}
+
+func (e Episodes) IDs() []string {
+	ids := make([]string, 0)
+	for _, e := range e {
+		ids = append(ids, e.Id)
+	}
+	return ids
 }

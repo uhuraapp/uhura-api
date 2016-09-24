@@ -1,6 +1,7 @@
 package services_test
 
 import (
+	"log"
 	"net/http"
 	"time"
 
@@ -38,15 +39,17 @@ func (x SubscriptionsSuite) TestGetIsOk(c *C) {
 }
 
 func (x SubscriptionsSuite) TestGetReturnSubscriptions(c *C) {
-	channel := models.Channel{Title: "Meu Podcast"}
+	channel := models.Channel{Title: "Meu Podcast", Language: "PT"}
 
 	x.DB.Create(&channel)
+	log.Println("CHNNAE", channel)
 	x.DB.Create(&models.Subscription{ChannelId: channel.Id, UserId: 1})
 
 	s := services.NewUserSubscriptionService(x.DB)
 	r := request("GET", s.Index, "")
 
 	data, _ := simplejson.NewJson(r.Body.Bytes())
+	log.Println("SSASAS", data)
 	currentTitle, _ := data.GetPath("subscriptions").GetIndex(0).Get("title").String()
 
 	c.Assert(channel.Title, Equals, currentTitle)

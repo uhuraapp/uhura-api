@@ -6,6 +6,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 	pq "github.com/lib/pq"
+	"github.com/uhuraapp/uhura-api/helpers"
 	"github.com/uhuraapp/uhura-api/models"
 )
 
@@ -42,7 +43,6 @@ func NewPostgresql() (database *gorm.DB) {
 func Migrations(database *gorm.DB) {
 	database.DB().Exec("create extension \"uuid-ossp\";")
 
-	database.AutoMigrate(&models.Episode{})
 	database.AutoMigrate(&models.Listened{})
 	database.AutoMigrate(&models.Channel{})
 	database.AutoMigrate(&models.Subscription{})
@@ -53,9 +53,6 @@ func Migrations(database *gorm.DB) {
 
 	database.Model(&models.Channel{}).AddIndex("idx_channel_uri", "uri")
 	database.Model(&models.Channel{}).AddIndex("idx_channel_url", "url")
-
-	database.Model(&models.Episode{}).AddIndex("idx_episode_channel_id", "channel_id")
-	database.Model(&models.Episode{}).AddIndex("idx_episode_channel_id_with_published_at", "channel_id", "published_at")
 
 	database.Model(&models.Listened{}).AddIndex("idx_listened", "item_id", "viewed", "user_id")
 	database.Model(&models.Listened{}).AddIndex("idx_listened_by_channel", "channel_id", "user_id")
@@ -73,21 +70,30 @@ func Migrations(database *gorm.DB) {
 	database.Model(&models.ChannelURL{}).AddUniqueIndex("idx_channel_url_url", "url")
 
 	// Search
-	database.Exec("CREATE EXTENSION unaccent")
-	database.Exec("ALTER TABLE channels ADD COLUMN tsv tsvector")
-	database.Exec("CREATE INDEX channels_tsv_idx ON channels USING gin(tsv)")
-	database.Exec("UPDATE channels SET tsv = setweight(to_tsvector(language::regconfig, coalesce(title,'')), 'A') || setweight(to_tsvector(language::regconfig, coalesce(description,'')), 'D');")
-	_, err := database.DB().Exec(`CREATE FUNCTION channels_search_trigger() RETURNS trigger AS $$
-begin
-  new.tsv :=
-    setweight(to_tsvector(language::regconfig, coalesce(title,'')), 'A') ||
-		setweight(to_tsvector(language::regconfig, coalesce(description,'')), 'D');
-  return new;
-end
-$$ LANGUAGE plpgsql;`)
+	_, err := database.DB().Exec(`DROP FUNCTION IF EXISTS channels_search_trigger() CASCADE`)
 	if err != nil {
 		log.Println(err)
 	}
-	database.Exec("CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE ON channels FOR EACH ROW EXECUTE PROCEDURE channels_search_trigger();")
 
+	database.Exec("DROP EXTENSION IF EXISTS unaccent")
+	database.Exec("ALTER TABLE channels DROP COLUMN IF EXISTS tsv")
+	database.Exec("DROP INDEX IF EXISTS channels_tsv_idx")
+
+	database.Exec("DROP TRIGGER tsvectorupdate")
+
+	var plays []struct {
+		Id    int
+		Title string
+	}
+
+	database.Table(models.Listened{}.TableName()).
+		Select("user_items.id AS id, items.title AS title").
+		Joins("JOIN items ON items.id = user_items.item_id").
+		Find(&plays)
+
+	for _, play := range plays {
+		database.Table(models.Listened{}.TableName()).
+			Where("id = ?", play.Id).
+			UpdateColumn("item_uid", helpers.MakeUri(play.Title))
+	}
 }

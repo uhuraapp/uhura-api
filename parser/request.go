@@ -4,11 +4,20 @@ import (
 	"errors"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/uhuraapp/uhura-api/helpers"
 )
 
 func RequestURL(url string) ([]byte, error) {
+	_, checkURL := helpers.ParseURL(url)
+
+	if checkURL != nil {
+		return nil, checkURL
+	}
+
 	response, err := http.Get(url)
-	log.Debug("requested url: %s - %s", url, err)
+
+	// log.Debug("requested url: %s - %s", url, err)
 	if err != nil {
 		return nil, err
 	}
@@ -19,5 +28,6 @@ func RequestURL(url string) ([]byte, error) {
 	}
 	body, err := ioutil.ReadAll(response.Body)
 
+	// log.Debug("request finished")
 	return body, err
 }

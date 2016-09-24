@@ -1,94 +1,33 @@
 package parser
 
-import (
-	"errors"
-	"regexp"
-
-	rss "github.com/jteeuwen/go-pkg-rss"
-	"golang.org/x/net/html/charset"
-)
-
 type Fetcher struct {
-	channel chan<- *Channel
-	err     chan<- error
+	c chan<- *Channel
+	e chan<- error
+	b chan<- []byte
 }
 
-func RunFetcher(url string, c chan<- *Channel, err chan<- error) {
-	fetcher := &Fetcher{c, err}
+func RunFetcher(url string, c chan<- *Channel, err chan<- error, body chan<- []byte) {
+	fetcher := &Fetcher{c, err, body}
 	fetcher.process(url)
-	fetcher.end(nil, errors.New("not found channel"))
 }
 
 func (f *Fetcher) process(url string) {
 	body, err := RequestURL(url)
 
 	if err != nil {
-		log.Debug("a new error %s", err.Error())
+		// log.Debug("a new error %s", err.Error())
 		f.end(nil, err)
 		return
 	}
 
-	if f.isHTML(body) {
-		log.Debug("url is html")
-		links := FindLinks(body)
-		log.Debug("links %s", links)
-		if len(links) > 0 {
-			f.process(links[0])
-			return
-		}
+	go func() {
+		f.b <- body
+	}()
 
-		err = errors.New("URL is a HTML page, and a LINK to XML Feed URL was not found")
-		f.end(nil, err)
-		return
-	}
-
-	rss.New(0, true, f._c, f.episodeHandler(url, body)).
-		FetchBytes(url, body, charset.NewReaderLabel)
-}
-
-func (f *Fetcher) episodeHandler(url string, body []byte) func(*rss.Feed, *rss.Channel, []*rss.Item) {
-	return func(feed *rss.Feed, rssChannel *rss.Channel, episodes []*rss.Item) {
-		channel := Channel{Feed: rssChannel, URL: url, Body: body}
-		if channel.HasNewURL() && channel.NewURL() != url {
-			log.Debug("has new URL: %s != %s", channel.NewURL(), feed.Url)
-			f.process(channel.NewURL())
-			return
-		}
-
-		channel = build(addEpisodes(channel, episodes))
-		f.end(&channel, nil)
-	}
-}
-
-func addEpisodes(c Channel, e []*rss.Item) Channel {
-	for k := range e {
-		log.Debug("Adding episode (%s) to channel (%s)", e[k].Title, c.Title)
-		c.Episodes = append(c.Episodes, &Episode{Feed: e[k]})
-	}
-	return c
-}
-
-func build(c Channel) Channel {
-	c.Build()
-	episodes := make([]*Episode, 0)
-	for _, e := range c.Episodes {
-		if e.Build() {
-			episodes = append(episodes, e)
-		}
-	}
-	c.Episodes = episodes
-	return c
+	StartParser(body, url, f.c, f.e)
 }
 
 func (f *Fetcher) end(channel *Channel, err error) {
-	f.channel <- channel
-	f.err <- err
+	f.c <- channel
+	f.e <- err
 }
-
-var hasHTML = regexp.MustCompile(`<\/?html>`)
-
-func (f Fetcher) isHTML(body []byte) bool {
-	return hasHTML.Match(body)
-}
-
-func (f *Fetcher) _c(feed *rss.Feed, channels []*rss.Channel) {}
