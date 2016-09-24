@@ -6,6 +6,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 	pq "github.com/lib/pq"
+	"github.com/uhuraapp/uhura-api/helpers"
 	"github.com/uhuraapp/uhura-api/models"
 )
 
