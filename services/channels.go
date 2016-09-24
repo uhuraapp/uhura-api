@@ -33,7 +33,7 @@ func (s ChannelsService) Top(c *gin.Context) {
 }
 
 func (s ChannelsService) Get(c *gin.Context) {
-	channel, episodes, _, found := channels.Find(s.DB, c.Params.ByName("uri"))
+	channel, episodes, _, found := channels.Find(s.DB, c.Params.ByName("channel_id"))
 
 	if !found {
 		c.AbortWithStatus(http.StatusNotFound)
